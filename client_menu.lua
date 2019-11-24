@@ -3,21 +3,12 @@ AddEventHandler('onClientMapStart', function()
   exports.spawnmanager:forceRespawn()
 end)
 
-local isFirstSpawn = true
+--local isFirstSpawn = true
 local gameHost = false
-local npcPlayer = 50--待办
-
-local alivePlayers = {}
 local isGameStarted = false
-local gameEnded = false
 local playerInLobby = false
 local Players = {}
-
-local safeZones = {} -- All safezones
-local safeZonesBlips = {} -- All safezones blips
-local currentSafeZone = 1 -- Current safe zone
-
-local safeZoneTimer
+local npcPlayer = 10
 
 AddEventHandler("playerSpawned", function(spawn)
 
@@ -50,9 +41,9 @@ end)
 Citizen.CreateThread(function()
 	local menuOpen = false
 	
-    WarMenu.CreateMenu('MainMenu', '')
-    WarMenu.CreateSubMenu('PiFuMenu', 'MainMenu', '')
-    WarMenu.CreateSubMenu('AllPlayer', 'MainMenu', '')
+    WarMenu.CreateMenu('MainMenu', '主菜单')
+    WarMenu.CreateSubMenu('PiFuMenu', 'MainMenu', '皮肤菜单')
+    WarMenu.CreateSubMenu('AllPlayer', 'MainMenu', '玩家菜单')
 	WarMenu.SetTitleBackgroundColor('MainMenu', 30,144,255, 255)
     WarMenu.SetTitleBackgroundColor('PiFuMenu', 30,144,255, 255)
     WarMenu.SetTitleBackgroundColor('AllPlayer', 30,144,255, 255)
@@ -99,7 +90,7 @@ Citizen.CreateThread(function()
             WarMenu.OpenMenu('MainMenu')
         else
             gameHost = false
-            RenderScriptCams(false, 0, 3000, 1, 0)
+            --RenderScriptCams(false, 0, 3000, 1, 0)
         end
         
         TogglePvP(false)
@@ -120,27 +111,26 @@ Citizen.CreateThread(function()
             end
         end        
         
-        if isFirstSpawn then
-            AddTextEntry('FirstSpawnMessageHeader', '~r~大逃杀模式')
-            AddTextEntry('FirstSpawnMessageLine1', '前往圈内选择人物或举办比赛')
-            AddTextEntry('FirstSpawnMessageLine2', '~y~游玩提示:~n~~s~玩法参考绝地求生大逃杀模式，右键打开第一人称。~n~更过内容正在开发中~n~')
+        -- if isFirstSpawn then
+            -- AddTextEntry('FirstSpawnMessageHeader', '~r~大逃杀模式')
+            -- AddTextEntry('FirstSpawnMessageLine1', '前往圈内选择人物或举办比赛')
+            -- AddTextEntry('FirstSpawnMessageLine2', '~y~游玩提示:~n~~s~玩法参考绝地求生大逃杀模式，右键打开第一人称。~n~更过内容正在开发中~n~')
 
-            local Timer = GetGameTimer()
-            while not (IsControlJustPressed(2, 176) or IsDisabledControlJustPressed(2, 176) or GetGameTimer() - Timer > 10000) do
-                Citizen.Wait(0)
-                SetWarningMessageWithHeader('FirstSpawnMessageHeader', 'FirstSpawnMessageLine1', 2, 'FirstSpawnMessageLine2', false, 0, false, 0, false)
-            end
+            -- local Timer = GetGameTimer()
+            -- while not (IsControlJustPressed(2, 176) or IsDisabledControlJustPressed(2, 176) or GetGameTimer() - Timer > 10000) do
+                -- Citizen.Wait(0)
+                -- SetWarningMessageWithHeader('FirstSpawnMessageHeader', 'FirstSpawnMessageLine1', 2, 'FirstSpawnMessageLine2', false, 0, false, 0, false)
+            -- end
 
-            isFirstSpawn = false
-        end
+            -- isFirstSpawn = false
+        -- end
         
         if gameHost == true then
-            garage_cam = CreateCamWithParams("DEFAULT_SCRIPTED_CAMERA", 146.11, -105.679, 38.590, 10.0, 0.0, 10.0, 40.0, 2, 2)
-            SetCamActive(garage_cam, true)
-            RenderScriptCams(true, 0, 3000, 1, 0)
+            --garage_cam = CreateCamWithParams("DEFAULT_SCRIPTED_CAMERA", 146.11, -105.679, 38.590, 10.0, 0.0, 10.0, 40.0, 2, 2)
+            --SetCamActive(garage_cam, true)
+            --RenderScriptCams(true, 0, 3000, 1, 0)
             RenderPlayerList(Players)
-        else
-            RenderScriptCams(false, 0, 3000, 1, 0)
+            --RenderScriptCams(false, 0, 3000, 1, 0)
         end
         Wait(0)
       end

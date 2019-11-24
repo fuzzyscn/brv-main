@@ -46,48 +46,68 @@ Citizen.CreateThread(function()
   end
 end)
 
-local INPUT_AIM = 25
-local UseFPS = false
-local justpressed = 0
-local lastThirdView = 0
+local INPUT_AIM = 38
+local prop_list = {}
 
 Citizen.CreateThread( function()
-
-  while true do
-
+    while true do
     Citizen.Wait(1)
-    --if getIsGameStarted() then
-        
-        if GetEntityHeightAboveGround(GetPlayerPed(-1)) < 50 and IsPedInParachuteFreeFall(GetPlayerPed(-1)) then
-			ForcePedToOpenParachute(GetPlayerPed(-1))
-		end
-        
-        local playerId = PlayerId()
-    
-        if IsControlPressed(0, INPUT_AIM) then
-          justpressed = justpressed + 1
+        local pos = GetEntityCoords(GetPlayerPed(-1))
+        local angle = GetEntityHeading(GetPlayerPed(-1))
+        if IsControlJustPressed(0, INPUT_AIM) then
+            CreateMap(pos, angle)
+            TriggerServerEvent('map:sync', pos, angle)
         end
-    
-        if IsControlJustReleased(0, INPUT_AIM) then
-        	if justpressed < 20 then
-        		UseFPS = true
-        	end
-        	justpressed = 0
-        end
-    
-        if UseFPS then
-        	local currentView = GetFollowPedCamViewMode()
-        	if currentView ~= 4 then
-        		lastThirdView = currentView
-        		SetFollowPedCamViewMode(4)
-        		Citizen.Trace(GetFollowPedCamViewMode())
-        	else
-        		SetFollowPedCamViewMode(lastThirdView)
-        		Citizen.Trace(GetFollowPedCamViewMode())
-        	end
-    		UseFPS = false
-        end
-      --end
     end
-
 end)
+
+AddEventHandler('onResourceStop', function (resourceName)
+  if resourceName ~= GetCurrentResourceName() then
+    return
+  end
+  unloadMap()
+end)
+
+RegisterNetEvent('map:create')
+AddEventHandler('map:create', function (playerId, pos, angle)
+  CreateMap(pos, angle)
+end)
+
+function CreateMap(pos, angle)
+    local model = "stt_prop_ramp_jump_xs"
+    local hash = GetHashKey(model)
+    --local hash = 138278167
+    while not HasModelLoaded(hash) do
+        RequestModel(hash)
+        Wait(0)
+    end
+    local obj = CreateObjectNoOffset(hash, pos, false, false, false)
+
+    local min, max = GetModelDimensions(hash)
+    local offset = math.abs(min.x)
+
+    SetEntityHeading(obj, angle + 90)
+    PlaceObjectOnGroundProperly(obj)
+
+    local new = GetOffsetFromEntityInWorldCoords(obj, offset, 0, 0)
+    SetEntityCoords(obj, new.x, new.y, new.z - 0.1)
+    FreezeEntityPosition(obj, true)
+    SetObjectTextureVariant(obj, 8)
+    table.insert(prop_list, obj)
+    --unpackTable(prop_list)
+    return obj
+end
+
+function unloadMap()
+	Citizen.Trace("fuzzys: UNLOAD MAP")
+	for _, prop in ipairs(prop_list) do -- delete current props
+		DeleteObject(prop)
+	end
+	prop_list = {}
+end
+
+function unpackTable(tb)
+    for k, v in pairs(tb) do
+        print(k .. " " .. v)
+    end
+end

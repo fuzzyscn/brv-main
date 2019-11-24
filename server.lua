@@ -5,6 +5,7 @@ local isGameStarted = false
 local nbAlivePlayers = 0
 local gameId = 0
 local sqlDateFormat = '%Y-%m-%d %H:%M:%S'
+local tb = {}
 
 RegisterServerEvent('fuzzys:playerSpawned')
 AddEventHandler('fuzzys:playerSpawned', function()
@@ -22,7 +23,50 @@ end)
 RegisterNetEvent('fuzzys:getplayerid')
 AddEventHandler('fuzzys:getplayerid', function(i)
     print(i)
+    print(os.date(sqlDateFormat))
 end)
+
+RegisterServerEvent('map:sync')
+AddEventHandler('map:sync', function (pos, angle)
+    for _, playerId in ipairs(GetPlayers()) do
+        if tostring(source) ~= tostring(playerId) then
+            TriggerClientEvent('map:create', playerId, source, pos, angle)
+            print(playerId)
+        end
+    end
+    tablejsonList(pos, angle)
+    --unpackTable(tb.prop)
+end)
+
+Citizen.CreateThread(function()
+    local data = LoadResourceFile(GetCurrentResourceName(), "list.json") or ""
+	if data ~= "" then
+		tb = json.decode(data)
+	else
+		tb = {
+            prop = {}
+        }
+	end
+    --table.sort(tb.mission.race.chl, function(a,b))
+end)
+function tablejsonList(pos, angle)
+	local posAngle = {
+		x = pos.x,
+		y = pos.y,
+		z = pos.z,
+		a = angle
+	}
+    table.insert(tb.prop, posAngle)
+	SaveResourceFile(GetCurrentResourceName(), "list.json", json.encode(tb), -1)
+end
+function unpackTable(tb)
+    for k, v in pairs(tb) do
+        print(k)
+        for k, v in pairs(v) do
+            print(k .. " " .. v)
+        end
+    end
+end
 
 function loadPlayer(source)
   if players[source] == nil then
