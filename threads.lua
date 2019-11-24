@@ -1,4 +1,4 @@
-Citizen.CreateThread(function()
+--[[Citizen.CreateThread(function()
   -- SetRandomSeed(GetNetworkTime())
   StartAudioScene("CHARACTER_CHANGE_IN_SKY_SCENE")
   Citizen.InvokeNative(GetHashKey("ADD_TEXT_ENTRY"), 'FE_THDR_GTAO', '大逃杀模式测试')
@@ -40,11 +40,9 @@ Citizen.CreateThread(function()
         ResetPlayerStamina(PlayerId())
     	SetVehRadioStation(vehicle, "OFF")
     	SetVehicleEngineOn(vehicle,true)
-    	--SetVehicleHasBeenOwnedByPlayer(vehicle, true)
-    	--SetVehicleRadioEnabled(vehicle, false)
     end
   end
-end)
+end)]]--
 
 local INPUT_AIM = 38
 local prop_list = {}
@@ -66,7 +64,7 @@ AddEventHandler('onResourceStop', function(resourceName)
     if resourceName ~= GetCurrentResourceName() then
       return
     end
-    unloadMap()
+    unloadJsonMap()
 end)
 
 RegisterNetEvent('map:create')
@@ -76,13 +74,17 @@ end)
 
 RegisterNetEvent('map:loadmap')
 AddEventHandler('map:loadmap', function(prop)
-    loadmap(prop)
+    loadMap(prop)
+end)
+
+RegisterNetEvent('map:loadOldMap')
+AddEventHandler('map:loadOldMap', function(prop)
+    loadMapOld(prop)
 end)
 
 function CreateMap(pos, angle)
     local model = "stt_prop_ramp_jump_xs"
     local hash = GetHashKey(model)
-    --local hash = 138278167
     while not HasModelLoaded(hash) do
         RequestModel(hash)
         Wait(0)
@@ -98,28 +100,63 @@ function CreateMap(pos, angle)
     local new = GetOffsetFromEntityInWorldCoords(obj, offset, 0, 0)
     SetEntityCoords(obj, new.x, new.y, new.z - 0.1)
     FreezeEntityPosition(obj, true)
-    SetObjectTextureVariant(obj, 8)
+    SetObjectTextureVariant(obj, 7)
     table.insert(prop_list, obj)
     return obj
 end
 
-function unloadMap()
+function loadMap(prop)
+Citizen.CreateThread(function()
+	local props = prop
+	if props ~= nil and props.no > 0 then
+		for k, prop in ipairs(props) do
+			local hash = tonumber(prop.model)
+			local pos = vector3(tonumber(prop.loc.x),tonumber(prop.loc.y),tonumber(prop.loc.z))
+			local rot = vector3(tonumber(prop.vRot.x),tonumber(prop.vRot.x),tonumber(prop.vRot.x))
+			local dynamic = false
+			local colorid = 0
+			-- if prop.Dynamic then
+				-- dynamic = true
+			-- end
+			-- if prop.Color then
+				-- colorid = tonumber(prop.Color[1])
+			-- end
+			while not HasModelLoaded(hash) do
+				RequestModel(hash)
+				Wait(0)
+			end
+			local obj = CreateObjectNoOffset(hash, pos, false, false, dynamic)
+			SetEntityRotation(obj, rot, 2, true)
+			FreezeEntityPosition(obj, not dynamic)
+			SetObjectTextureVariant(obj, colorid)
+			-- if prop.SBA then
+				-- local sba = tonumber(prop.SBA[1])
+				-- setSBA(obj, sba)
+			-- end
+			table.insert(props, obj)
+		end
+        Citizen.Trace("fuzzys: LOAD ".. num .." NEW PROPS SUCCESS ")
+	end
+end)
+end
+
+function loadMapOld(prop)
+    unloadJsonMap()
+    local num = 0
+    for k, v in pairs(prop) do
+        local pos = vector3(v.x, v.y, v.z)
+        CreateMap(pos, v.a)
+        num = k
+    end
+    Citizen.Trace("fuzzys: LOAD ".. num .." OLD PROPS SUCCESS ")
+end
+
+function unloadJsonMap()
     local num = 0
 	for k, prop in ipairs(prop_list) do -- delete current props
 		DeleteObject(prop)
         num = k
 	end
-    Citizen.Trace("fuzzys: UNLOAD ".. num .." PROPS SUCCESS ")
+    Citizen.Trace("fuzzys: UNLOAD ".. num .." OLD PROPS SUCCESS ")
 	prop_list = {}
-end
-
-function loadmap(tb)
-    unloadMap()
-    local num = 0
-    for k, v in pairs(tb) do
-        local pos = vector3(v.x, v.y, v.z)
-        CreateMap(pos, v.a)
-        num = k
-    end
-    Citizen.Trace("fuzzys: LOAD ".. num .." PROPS SUCCESS ")
 end

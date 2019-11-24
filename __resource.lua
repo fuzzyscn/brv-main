@@ -6,7 +6,7 @@ description 'Battle Royale Mode'
 
 -- WarMenu resource
 client_script "@warmenu/warmenu.lua"
-server_script '@mysql-async/lib/MySQL.lua'
+--server_script '@mysql-async/lib/MySQL.lua'
 
 client_script {
   'client_menu.lua',

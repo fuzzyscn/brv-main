@@ -6,17 +6,19 @@ local nbAlivePlayers = 0
 local gameId = 0
 local sqlDateFormat = '%Y-%m-%d %H:%M:%S'
 local props = {}
+local prop_list = {}
 
 RegisterServerEvent('fuzzys:playerSpawned')
 AddEventHandler('fuzzys:playerSpawned', function()
   if not players[source] then
-    loadPlayer(source)
+    --loadPlayer(source)
   end
 end)
 
-RegisterNetEvent('fuzzys:hostGame')
-AddEventHandler('fuzzys:hostGame', function(npcPlayer)
+RegisterNetEvent('fuzzys:loadOldMap')
+AddEventHandler('fuzzys:loadOldMap', function(npcPlayer)
     gameHost = true
+    TriggerClientEvent('map:loadOldMap', source, prop_list)
     print(npcPlayer)
 end)
 
@@ -38,20 +40,31 @@ end)
 
 RegisterServerEvent('fuzzys:loadmap')
 AddEventHandler('fuzzys:loadmap', function()
-    TriggerClientEvent('map:loadmap', source, props.prop)
+    TriggerClientEvent('map:loadmap', source, props.mission.prop)
 end)
 
 Citizen.CreateThread(function()
-    local data = LoadResourceFile(GetCurrentResourceName(), "props.json") or ""
-    if data ~= "" then
-        props = json.decode(data)
+    local data1 = LoadResourceFile(GetCurrentResourceName(), "race.json") or ""
+    if data1 ~= "" then
+        props = json.decode(data1)
     else
-        props = {
+        props = {}
+    end
+    local data2 = LoadResourceFile(GetCurrentResourceName(), "prop_list.json") or ""
+    if data2 ~= "" then
+        prop_list = json.decode(data2)
+    else
+        prop_list = {
             prop = {}
         }
     end
-    --unpackTable(props.prop)
-    --table.sort(props.mission.race.chl, function(a,b))
+    --table.sort(props)
+    --print(props.mission.gen.propno)
+    --print(props.mission.prop.no)
+    --unpackTable1(props.mission.prop.model)
+    --unpackTable2(props.mission.prop.vRot)
+    --unpackTable2(props.mission.prop.loc)
+    --unpackTable2(prop_list.prop)
 end)
 
 function tablejsonList(pos, angle)
@@ -61,19 +74,23 @@ function tablejsonList(pos, angle)
 		z = pos.z,
 		a = angle
 	}
-    table.insert(props.prop, posAngle)
-	SaveResourceFile(GetCurrentResourceName(), "props.json", json.encode(props), -1)
+    table.insert(prop_list.prop, posAngle)
+	SaveResourceFile(GetCurrentResourceName(), "prop_list.json", json.encode(prop_list), -1)
 end
-function unpackTable(tb)
+function unpackTable1(tb)
     for k, v in pairs(tb) do
-        print(k)
+        print(k .. " " .. v)
+    end
+end
+function unpackTable2(tb)
+    for k, v in pairs(tb) do
         for k, v in pairs(v) do
             print(k .. " " .. v)
         end
     end
 end
 
-function loadPlayer(source)
+--[[function loadPlayer(source)
   if players[source] == nil then
     local steamId = GetPlayerIdentifiers(source)[1]
 
@@ -95,4 +112,4 @@ function loadPlayer(source)
       end
     end)
   end
-end
+end]]--

@@ -36,10 +36,9 @@ AddEventHandler("playerSpawned", function(spawn)
 
     playerInLobby = true
     TriggerServerEvent('fuzzys:playerSpawned')
-    --if isFirstSpawn then
-        
-        --isFirstSpawn = false
-    --end
+    -- if isFirstSpawn then
+        -- isFirstSpawn = false
+    -- end
 end)
 
 Citizen.CreateThread(function()
@@ -54,9 +53,9 @@ Citizen.CreateThread(function()
     WarMenu.SetTitleColor('MainMenu', 255, 255, 255)
     WarMenu.SetTitleColor('PiFuMenu', 255, 255, 255)
     WarMenu.SetTitleColor('AllPlayer', 255, 255, 255)
-	WarMenu.SetTitleBackgroundSprite('MainMenu', 'commonmenu', 'interaction_bgd')
-	WarMenu.SetTitleBackgroundSprite('PiFuMenu', 'commonmenu', 'interaction_bgd')
-	WarMenu.SetTitleBackgroundSprite('AllPlayer', 'commonmenu', 'interaction_bgd')
+	WarMenu.SetTitleBackgroundSprite('MainMenu', 'shopui_title_exec_vechupgrade', 'shopui_title_exec_vechupgrade')
+	WarMenu.SetTitleBackgroundSprite('PiFuMenu', 'shopui_title_exec_vechupgrade', 'shopui_title_exec_vechupgrade')
+	WarMenu.SetTitleBackgroundSprite('AllPlayer', 'shopui_title_exec_vechupgrade', 'shopui_title_exec_vechupgrade')
         
     while true do
     
@@ -66,10 +65,10 @@ Citizen.CreateThread(function()
         elseif WarMenu.IsMenuOpened('MainMenu') then
             if WarMenu.MenuButton("更换人物", "PiFuMenu") then			
 			elseif WarMenu.MenuButton("所有玩家", "AllPlayer") then
-            elseif WarMenu.Button('创建比赛') then
-                TriggerServerEvent('fuzzys:hostGame', npcPlayer)
+            elseif WarMenu.Button('创建比赛-加载模型') then
+                TriggerServerEvent('fuzzys:loadOldMap', npcPlayer)
                 gameHost = true
-            elseif WarMenu.Button('加载地图模型') then
+            elseif WarMenu.Button('加载比赛地图') then
                 TriggerServerEvent('fuzzys:loadmap')
                 gameHost = false
             end
@@ -91,7 +90,7 @@ Citizen.CreateThread(function()
                 end
             end
             WarMenu.Display()
-        elseif menuOpen then
+        elseif IsControlJustReleased(0, 244) or menuOpen then
             WarMenu.OpenMenu('MainMenu')
         else
             gameHost = false
@@ -101,37 +100,37 @@ Citizen.CreateThread(function()
         TogglePvP(false)
         local Players = GetPlayers()
         local playerCoords = GetEntityCoords(GetPlayerPed(-1), true)
-		local markCoords = {x=146.416, y=-94.7831, z=37.572}
+		local markCoords = {x=1979.17, y = 3708.92, z = 31.12}
         
-        if GetDistanceBetweenCoords(playerCoords.x, playerCoords.y, playerCoords.z, markCoords.x, markCoords.y, markCoords.z, true) <= 50.0 then
+        if GetDistanceBetweenCoords(playerCoords.x, playerCoords.y, playerCoords.z, markCoords.x, markCoords.y, markCoords.z, true) <= 10.0 then
             DrawMarker(1, markCoords.x, markCoords.y, markCoords.z, 0, 0, 0, 0, 0, 0, 4.0, 3.6, 2.0, 30,144,255, 180, 0, 0, 2, 0, 0, 0, 0)
-            DrawMarker(9, markCoords.x, markCoords.y, markCoords.z + 0.59, 0, 0, 0, 0, 0, 0, 2.0, 2.0, 2.0, 30,144,255, 180, 0, 0, 2, 0, 0, 0, 0)
-            DrawMarker(37, markCoords.x, markCoords.y, markCoords.z + 1.5, 0, 0, 0, 0, 0, 0, 4.0, 4.0, 4.0, 30,144,255, 180, 0, 0, 2, 0, 0, 0, 0)
+            --DrawMarker(9, markCoords.x, markCoords.y, markCoords.z + 0.59, 0, 0, 0, 0, 0, 0, 2.0, 2.0, 2.0, 30,144,255, 180, 0, 0, 2, 0, 0, 0, 0)
+            --DrawMarker(37, markCoords.x, markCoords.y, markCoords.z + 1.5, 0, 0, 0, 0, 0, 0, 4.0, 4.0, 4.0, 30,144,255, 180, 0, 0, 2, 0, 0, 0, 0)
             if GetDistanceBetweenCoords(playerCoords.x, playerCoords.y, playerCoords.z, markCoords.x, markCoords.y, markCoords.z, true) <= 3.0 then
                 menuOpen = true
                 Draw3DText(markCoords.x, markCoords.y, markCoords.z - 2.0, "~b~创建比赛", 5, 0.25, 0.25)
             else
-                WarMenu.CloseMenu()                
+                --WarMenu.CloseMenu()                
                 menuOpen = false
             end
         end        
         
-        -- if isFirstSpawn then
-            -- AddTextEntry('FirstSpawnMessageHeader', '~r~大逃杀模式')
-            -- AddTextEntry('FirstSpawnMessageLine1', '前往圈内选择人物或举办比赛')
-            -- AddTextEntry('FirstSpawnMessageLine2', '~y~游玩提示:~n~~s~玩法参考绝地求生大逃杀模式，右键打开第一人称。~n~更过内容正在开发中~n~')
+        if isFirstSpawn then
+            AddTextEntry('FirstSpawnMessageHeader', '~r~大逃杀模式')
+            AddTextEntry('FirstSpawnMessageLine1', '前往圈内选择人物或举办比赛')
+            AddTextEntry('FirstSpawnMessageLine2', '~y~游玩提示:~n~~s~玩法参考绝地求生大逃杀模式，右键打开第一人称。~n~更过内容正在开发中~n~')
 
-            -- local Timer = GetGameTimer()
-            -- while not (IsControlJustPressed(2, 176) or IsDisabledControlJustPressed(2, 176) or GetGameTimer() - Timer > 10000) do
-                -- Citizen.Wait(0)
-                -- SetWarningMessageWithHeader('FirstSpawnMessageHeader', 'FirstSpawnMessageLine1', 2, 'FirstSpawnMessageLine2', false, 0, false, 0, false)
-            -- end
+            local Timer = GetGameTimer()
+            while not (IsControlJustPressed(2, 176) or IsDisabledControlJustPressed(2, 176) or GetGameTimer() - Timer > 10000) do
+                Citizen.Wait(0)
+                SetWarningMessageWithHeader('FirstSpawnMessageHeader', 'FirstSpawnMessageLine1', 2, 'FirstSpawnMessageLine2', false, 0, false, 0, false)
+            end
 
-            -- isFirstSpawn = false
-        -- end
+            isFirstSpawn = false
+        end
         
         if gameHost == true then
-            --garage_cam = CreateCamWithParams("DEFAULT_SCRIPTED_CAMERA", 146.11, -105.679, 38.590, 10.0, 0.0, 10.0, 40.0, 2, 2)
+            --garage_cam = CreateCamWithParams("DEFAULT_SCRIPTED_CAMERA", 1979.17, 3708.92, 32.12, 10.0, 0.0, 10.0, 40.0, 2, 2)
             --SetCamActive(garage_cam, true)
             --RenderScriptCams(true, 0, 3000, 1, 0)
             RenderPlayerList(Players)
