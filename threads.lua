@@ -48,6 +48,7 @@ end)
 
 local INPUT_AIM = 38
 local prop_list = {}
+local props = {}
 
 Citizen.CreateThread( function()
     while true do
@@ -61,16 +62,21 @@ Citizen.CreateThread( function()
     end
 end)
 
-AddEventHandler('onResourceStop', function (resourceName)
-  if resourceName ~= GetCurrentResourceName() then
-    return
-  end
-  unloadMap()
+AddEventHandler('onResourceStop', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then
+      return
+    end
+    unloadMap()
 end)
 
 RegisterNetEvent('map:create')
-AddEventHandler('map:create', function (playerId, pos, angle)
-  CreateMap(pos, angle)
+AddEventHandler('map:create', function(pos, angle)
+    CreateMap(pos, angle)
+end)
+
+RegisterNetEvent('map:loadmap')
+AddEventHandler('map:loadmap', function(prop)
+    loadmap(prop)
 end)
 
 function CreateMap(pos, angle)
@@ -94,20 +100,26 @@ function CreateMap(pos, angle)
     FreezeEntityPosition(obj, true)
     SetObjectTextureVariant(obj, 8)
     table.insert(prop_list, obj)
-    --unpackTable(prop_list)
     return obj
 end
 
 function unloadMap()
-	Citizen.Trace("fuzzys: UNLOAD MAP")
-	for _, prop in ipairs(prop_list) do -- delete current props
+    local num = 0
+	for k, prop in ipairs(prop_list) do -- delete current props
 		DeleteObject(prop)
+        num = k
 	end
+    Citizen.Trace("fuzzys: UNLOAD ".. num .." PROPS SUCCESS ")
 	prop_list = {}
 end
 
-function unpackTable(tb)
+function loadmap(tb)
+    unloadMap()
+    local num = 0
     for k, v in pairs(tb) do
-        print(k .. " " .. v)
+        local pos = vector3(v.x, v.y, v.z)
+        CreateMap(pos, v.a)
+        num = k
     end
+    Citizen.Trace("fuzzys: LOAD ".. num .." PROPS SUCCESS ")
 end

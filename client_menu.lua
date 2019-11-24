@@ -3,7 +3,7 @@ AddEventHandler('onClientMapStart', function()
   exports.spawnmanager:forceRespawn()
 end)
 
---local isFirstSpawn = true
+local isFirstSpawn = true
 local gameHost = false
 local isGameStarted = false
 local playerInLobby = false
@@ -36,6 +36,10 @@ AddEventHandler("playerSpawned", function(spawn)
 
     playerInLobby = true
     TriggerServerEvent('fuzzys:playerSpawned')
+    --if isFirstSpawn then
+        
+        --isFirstSpawn = false
+    --end
 end)
 
 Citizen.CreateThread(function()
@@ -65,7 +69,8 @@ Citizen.CreateThread(function()
             elseif WarMenu.Button('创建比赛') then
                 TriggerServerEvent('fuzzys:hostGame', npcPlayer)
                 gameHost = true
-            elseif WarMenu.Button('关闭比赛') then
+            elseif WarMenu.Button('加载地图模型') then
+                TriggerServerEvent('fuzzys:loadmap')
                 gameHost = false
             end
 			WarMenu.Display()

@@ -5,7 +5,7 @@ local isGameStarted = false
 local nbAlivePlayers = 0
 local gameId = 0
 local sqlDateFormat = '%Y-%m-%d %H:%M:%S'
-local tb = {}
+local props = {}
 
 RegisterServerEvent('fuzzys:playerSpawned')
 AddEventHandler('fuzzys:playerSpawned', function()
@@ -27,28 +27,33 @@ AddEventHandler('fuzzys:getplayerid', function(i)
 end)
 
 RegisterServerEvent('map:sync')
-AddEventHandler('map:sync', function (pos, angle)
+AddEventHandler('map:sync', function(pos, angle)
     for _, playerId in ipairs(GetPlayers()) do
         if tostring(source) ~= tostring(playerId) then
-            TriggerClientEvent('map:create', playerId, source, pos, angle)
-            print(playerId)
+            TriggerClientEvent('map:create', playerId, pos, angle)
         end
     end
     tablejsonList(pos, angle)
-    --unpackTable(tb.prop)
+end)
+
+RegisterServerEvent('fuzzys:loadmap')
+AddEventHandler('fuzzys:loadmap', function()
+    TriggerClientEvent('map:loadmap', source, props.prop)
 end)
 
 Citizen.CreateThread(function()
-    local data = LoadResourceFile(GetCurrentResourceName(), "list.json") or ""
-	if data ~= "" then
-		tb = json.decode(data)
-	else
-		tb = {
+    local data = LoadResourceFile(GetCurrentResourceName(), "props.json") or ""
+    if data ~= "" then
+        props = json.decode(data)
+    else
+        props = {
             prop = {}
         }
-	end
-    --table.sort(tb.mission.race.chl, function(a,b))
+    end
+    --unpackTable(props.prop)
+    --table.sort(props.mission.race.chl, function(a,b))
 end)
+
 function tablejsonList(pos, angle)
 	local posAngle = {
 		x = pos.x,
@@ -56,8 +61,8 @@ function tablejsonList(pos, angle)
 		z = pos.z,
 		a = angle
 	}
-    table.insert(tb.prop, posAngle)
-	SaveResourceFile(GetCurrentResourceName(), "list.json", json.encode(tb), -1)
+    table.insert(props.prop, posAngle)
+	SaveResourceFile(GetCurrentResourceName(), "props.json", json.encode(props), -1)
 end
 function unpackTable(tb)
     for k, v in pairs(tb) do
