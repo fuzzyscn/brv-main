@@ -64,23 +64,23 @@ end)
 function tablejsonList(pos, rot)
     
     local model = GetHashKey("stt_prop_ramp_jump_xs")
-	local loc = {
-		x = pos.x,
-		y = pos.y,
-		z = pos.z - 0.1,
-	}
+    local loc = {
+        x = pos.x,
+        y = pos.y,
+        z = pos.z - 0.1,
+    }
     local vRot = {
-		x = rot.x,
-		y = rot.y,
-		z = rot.z,
-	}
+        x = rot.x,
+        y = rot.y,
+        z = rot.z,
+    }
     no = no + 1
     prop_list.mission.prop.no = no
     table.insert(prop_list.mission.prop.model, model)
     table.insert(prop_list.mission.prop.loc, loc)
     table.insert(prop_list.mission.prop.vRot, vRot)
     --table.sort(prop_list.mission.prop)
-	SaveResourceFile(GetCurrentResourceName(), "prop_list.json", json.encode(prop_list), -1)
+    SaveResourceFile(GetCurrentResourceName(), "prop_list.json", json.encode(prop_list), -1)
 end
 function unpackTable(tb)
     for k, v in pairs(tb) do
