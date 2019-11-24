@@ -44,8 +44,6 @@ Citizen.CreateThread(function()
   end
 end)]]--
 
-local INPUT_AIM = 38
-local prop_list = {}
 local props = {}
 
 Citizen.CreateThread( function()
@@ -53,9 +51,8 @@ Citizen.CreateThread( function()
     Citizen.Wait(1)
         local pos = GetEntityCoords(GetPlayerPed(-1))
         local angle = GetEntityHeading(GetPlayerPed(-1))
-        if IsControlJustPressed(0, INPUT_AIM) then
+        if IsControlJustPressed(0, 38) then
             CreateMap(pos, angle)
-            TriggerServerEvent('map:sync', pos, angle)
         end
     end
 end)
@@ -74,12 +71,7 @@ end)
 
 RegisterNetEvent('map:loadmap')
 AddEventHandler('map:loadmap', function(prop)
-    loadMap(prop)
-end)
-
-RegisterNetEvent('map:loadOldMap')
-AddEventHandler('map:loadOldMap', function(prop)
-    loadMapOld(prop)
+    loadJsonMap(prop)
 end)
 
 function CreateMap(pos, angle)
@@ -101,62 +93,53 @@ function CreateMap(pos, angle)
     SetEntityCoords(obj, new.x, new.y, new.z - 0.1)
     FreezeEntityPosition(obj, true)
     SetObjectTextureVariant(obj, 7)
-    table.insert(prop_list, obj)
-    return obj
+    local rot = GetEntityRotation(obj, 2)
+    TriggerServerEvent('map:sync', pos, angle, new, rot)
+    table.insert(props, obj)
 end
 
-function loadMap(prop)
-Citizen.CreateThread(function()
-	local props = prop
-	if props ~= nil and props.no > 0 then
-		for k, prop in ipairs(props) do
-			local hash = tonumber(prop.model)
-			local pos = vector3(tonumber(prop.loc.x),tonumber(prop.loc.y),tonumber(prop.loc.z))
-			local rot = vector3(tonumber(prop.vRot.x),tonumber(prop.vRot.x),tonumber(prop.vRot.x))
-			local dynamic = false
-			local colorid = 0
-			-- if prop.Dynamic then
-				-- dynamic = true
-			-- end
-			-- if prop.Color then
-				-- colorid = tonumber(prop.Color[1])
-			-- end
-			while not HasModelLoaded(hash) do
-				RequestModel(hash)
-				Wait(0)
-			end
-			local obj = CreateObjectNoOffset(hash, pos, false, false, dynamic)
-			SetEntityRotation(obj, rot, 2, true)
-			FreezeEntityPosition(obj, not dynamic)
-			SetObjectTextureVariant(obj, colorid)
-			-- if prop.SBA then
-				-- local sba = tonumber(prop.SBA[1])
-				-- setSBA(obj, sba)
-			-- end
-			table.insert(props, obj)
-		end
-        Citizen.Trace("fuzzys: LOAD ".. num .." NEW PROPS SUCCESS ")
-	end
-end)
-end
-
-function loadMapOld(prop)
+function loadJsonMap(prop)
     unloadJsonMap()
-    local num = 0
-    for k, v in pairs(prop) do
-        local pos = vector3(v.x, v.y, v.z)
-        CreateMap(pos, v.a)
-        num = k
-    end
-    Citizen.Trace("fuzzys: LOAD ".. num .." OLD PROPS SUCCESS ")
+    Citizen.CreateThread(function()
+        --local prop = prop
+        if prop ~= nil and prop.no > 0 then
+            for k = 1, prop.no do
+                local hash = tonumber(prop.model[k])
+                local pos = vector3(tonumber(prop.loc[k].x),tonumber(prop.loc[k].y),tonumber(prop.loc[k].z))
+                local rot = vector3(tonumber(prop.vRot[k].x),tonumber(prop.vRot[k].y),tonumber(prop.vRot[k].z))
+                local dynamic = false
+                local colorid = 7
+                -- if prop.Dynamic then
+                    -- dynamic = true
+                -- end
+                -- if prop.Color then
+                    -- colorid = tonumber(prop.Color[1])
+                -- end
+                while not HasModelLoaded(hash) do
+                    RequestModel(hash)
+                    Wait(0)
+                end
+                local obj = CreateObjectNoOffset(hash, pos, false, false, dynamic)
+                SetEntityRotation(obj, rot, 2, true)
+                FreezeEntityPosition(obj, not dynamic)
+                SetObjectTextureVariant(obj, colorid)
+                -- if prop.SBA then
+                    -- local sba = tonumber(prop.SBA[1])
+                    -- setSBA(obj, sba)
+                -- end
+                table.insert(props, obj)
+            end
+            Citizen.Trace("FUZZYS: LOAD ".. prop.no .." NEW PROPS SUCCESS ~~~~~~")
+        end
+    end)
 end
 
 function unloadJsonMap()
     local num = 0
-	for k, prop in ipairs(prop_list) do -- delete current props
-		DeleteObject(prop)
+    for k, v in ipairs(props) do
+        DeleteObject(v)
         num = k
-	end
-    Citizen.Trace("fuzzys: UNLOAD ".. num .." OLD PROPS SUCCESS ")
-	prop_list = {}
+    end
+    Citizen.Trace("fuzzys: unload ".. num .." props success ~~~")
+    props = {}
 end

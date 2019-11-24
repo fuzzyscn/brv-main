@@ -8,7 +8,7 @@ local gameHost = false
 local isGameStarted = false
 local playerInLobby = false
 local Players = {}
-local npcPlayer = 10
+local npcPlayer = 123
 
 AddEventHandler("playerSpawned", function(spawn)
 
@@ -66,11 +66,13 @@ Citizen.CreateThread(function()
             if WarMenu.MenuButton("更换人物", "PiFuMenu") then			
 			elseif WarMenu.MenuButton("所有玩家", "AllPlayer") then
             elseif WarMenu.Button('创建比赛-加载模型') then
-                TriggerServerEvent('fuzzys:loadOldMap', npcPlayer)
+                TriggerServerEvent('fuzzys:loadmodel', npcPlayer)
                 gameHost = true
             elseif WarMenu.Button('加载比赛地图') then
                 TriggerServerEvent('fuzzys:loadmap')
                 gameHost = false
+            elseif WarMenu.Button('卸载地图') then
+                unloadJsonMap()
             end
 			WarMenu.Display()
         elseif WarMenu.IsMenuOpened('PiFuMenu') then
@@ -116,9 +118,9 @@ Citizen.CreateThread(function()
         end        
         
         if isFirstSpawn then
-            AddTextEntry('FirstSpawnMessageHeader', '~r~大逃杀模式')
+            AddTextEntry('FirstSpawnMessageHeader', '~r~FiveM创造模式')
             AddTextEntry('FirstSpawnMessageLine1', '前往圈内选择人物或举办比赛')
-            AddTextEntry('FirstSpawnMessageLine2', '~y~游玩提示:~n~~s~玩法参考绝地求生大逃杀模式，右键打开第一人称。~n~更过内容正在开发中~n~')
+            AddTextEntry('FirstSpawnMessageLine2', '~y~提示:~n~~s~此模式正在开发中，M键打开交互菜单。~n~更过玩法内容正在开发中~n~')
 
             local Timer = GetGameTimer()
             while not (IsControlJustPressed(2, 176) or IsDisabledControlJustPressed(2, 176) or GetGameTimer() - Timer > 10000) do

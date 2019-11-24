@@ -7,6 +7,7 @@ local gameId = 0
 local sqlDateFormat = '%Y-%m-%d %H:%M:%S'
 local props = {}
 local prop_list = {}
+local no = 0
 
 RegisterServerEvent('fuzzys:playerSpawned')
 AddEventHandler('fuzzys:playerSpawned', function()
@@ -15,10 +16,10 @@ AddEventHandler('fuzzys:playerSpawned', function()
   end
 end)
 
-RegisterNetEvent('fuzzys:loadOldMap')
-AddEventHandler('fuzzys:loadOldMap', function(npcPlayer)
+RegisterNetEvent('fuzzys:loadmodel')
+AddEventHandler('fuzzys:loadmodel', function(npcPlayer)
     gameHost = true
-    TriggerClientEvent('map:loadOldMap', source, prop_list)
+    TriggerClientEvent('map:loadmap', source, prop_list.mission.prop)
     print(npcPlayer)
 end)
 
@@ -29,13 +30,13 @@ AddEventHandler('fuzzys:getplayerid', function(i)
 end)
 
 RegisterServerEvent('map:sync')
-AddEventHandler('map:sync', function(pos, angle)
+AddEventHandler('map:sync', function(pos, angle, new, rot)
     for _, playerId in ipairs(GetPlayers()) do
         if tostring(source) ~= tostring(playerId) then
             TriggerClientEvent('map:create', playerId, pos, angle)
         end
     end
-    tablejsonList(pos, angle)
+    tablejsonList(new, rot)
 end)
 
 RegisterServerEvent('fuzzys:loadmap')
@@ -47,43 +48,43 @@ Citizen.CreateThread(function()
     local data1 = LoadResourceFile(GetCurrentResourceName(), "race.json") or ""
     if data1 ~= "" then
         props = json.decode(data1)
-    else
-        props = {}
     end
     local data2 = LoadResourceFile(GetCurrentResourceName(), "prop_list.json") or ""
     if data2 ~= "" then
         prop_list = json.decode(data2)
-    else
-        prop_list = {
-            prop = {}
-        }
     end
-    --table.sort(props)
+    no = prop_list.mission.prop.no
+    --  {"mission":{"prop":{"model":[],"loc":[],"no":0,"vRot":[]}}}
     --print(props.mission.gen.propno)
-    --print(props.mission.prop.no)
-    --unpackTable1(props.mission.prop.model)
-    --unpackTable2(props.mission.prop.vRot)
-    --unpackTable2(props.mission.prop.loc)
-    --unpackTable2(prop_list.prop)
+    --print(prop_list.mission.prop.model[1])
+    --unpackTable(prop_list.mission.prop.vRot)
+    --unpackTable(prop_list.mission.prop.loc)
 end)
 
-function tablejsonList(pos, angle)
-	local posAngle = {
+function tablejsonList(pos, rot)
+    
+    local model = GetHashKey("stt_prop_ramp_jump_xs")
+	local loc = {
 		x = pos.x,
 		y = pos.y,
-		z = pos.z,
-		a = angle
+		z = pos.z - 0.1,
 	}
-    table.insert(prop_list.prop, posAngle)
+    local vRot = {
+		x = rot.x,
+		y = rot.y,
+		z = rot.z,
+	}
+    no = no + 1
+    prop_list.mission.prop.no = no
+    table.insert(prop_list.mission.prop.model, model)
+    table.insert(prop_list.mission.prop.loc, loc)
+    table.insert(prop_list.mission.prop.vRot, vRot)
+    --table.sort(prop_list.mission.prop)
 	SaveResourceFile(GetCurrentResourceName(), "prop_list.json", json.encode(prop_list), -1)
 end
-function unpackTable1(tb)
+function unpackTable(tb)
     for k, v in pairs(tb) do
-        print(k .. " " .. v)
-    end
-end
-function unpackTable2(tb)
-    for k, v in pairs(tb) do
+        print(k)
         for k, v in pairs(v) do
             print(k .. " " .. v)
         end
