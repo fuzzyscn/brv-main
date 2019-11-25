@@ -1,49 +1,3 @@
---[[Citizen.CreateThread(function()
-  -- SetRandomSeed(GetNetworkTime())
-  StartAudioScene("CHARACTER_CHANGE_IN_SKY_SCENE")
-  Citizen.InvokeNative(GetHashKey("ADD_TEXT_ENTRY"), 'FE_THDR_GTAO', '大逃杀模式测试')
-  SetPlayerHealthRechargeMultiplier(PlayerId(), 0)
-  SetPoliceIgnorePlayer(player, true)
-  SetDispatchCopsForPlayer(player, false)
-  SetMaxWantedLevel(0)
-  while true do
-    Citizen.Wait(0)  
-        DisplayRadar(false)
-        DisplayHud(false)
-        SetVehicleDensityMultiplierThisFrame(0.0)
-		SetPedDensityMultiplierThisFrame(0.0)
-		SetRandomVehicleDensityMultiplierThisFrame(0.0)
-		SetParkedVehicleDensityMultiplierThisFrame(0.0)
-		SetScenarioPedDensityMultiplierThisFrame(0.0, 0.0)
-		-- These natives do not have to be called everyframe.
-		SetGarbageTrucks(0)
-		SetRandomBoats(0)
-
-  end
-end)
-
-Citizen.CreateThread(function()
-  while true do
-    Citizen.Wait(50)
-
-    NetworkOverrideClockTime(12, 30, 0)
-
-    SetWeatherTypePersist("CLEAR")
-    SetWeatherTypeNowPersist("CLEAR")
-    SetWeatherTypeNow("CLEAR")
-    SetOverrideWeather("CLEAR")
-    
-    local ped = GetPlayerPed(-1)
-	local vehicle = GetVehiclePedIsIn(ped)
-    
-    if IsPedInAnyVehicle(ped, true) then
-        ResetPlayerStamina(PlayerId())
-    	SetVehRadioStation(vehicle, "OFF")
-    	SetVehicleEngineOn(vehicle,true)
-    end
-  end
-end)]]--
-
 local props = {}
 
 Citizen.CreateThread( function()
@@ -101,20 +55,19 @@ end
 function loadJsonMap(prop)
     unloadJsonMap()
     Citizen.CreateThread(function()
-        --local prop = prop
-        if prop ~= nil and prop.no > 0 then
+        if prop.no > 0 then
             for k = 1, prop.no do
                 local hash = tonumber(prop.model[k])
                 local pos = vector3(tonumber(prop.loc[k].x),tonumber(prop.loc[k].y),tonumber(prop.loc[k].z))
                 local rot = vector3(tonumber(prop.vRot[k].x),tonumber(prop.vRot[k].y),tonumber(prop.vRot[k].z))
                 local dynamic = false
-                local colorid = 7
-                -- if prop.Dynamic then
-                    -- dynamic = true
-                -- end
-                -- if prop.Color then
-                    -- colorid = tonumber(prop.Color[1])
-                -- end
+                local colorid = 0
+                if prop.Dynamic then--no
+                    dynamic = true
+                end
+                if prop.prpclr then
+                    colorid = tonumber(prop.prpclr[k])
+                end
                 while not HasModelLoaded(hash) do
                     RequestModel(hash)
                     Wait(0)
@@ -129,7 +82,7 @@ function loadJsonMap(prop)
                 -- end
                 table.insert(props, obj)
             end
-            Citizen.Trace("FUZZYS: LOAD ".. prop.no .." NEW PROPS SUCCESS ~~~~~~")
+            Citizen.Trace("FUZZYS: LOAD ".. prop.no .." NEW PROPS SUCCESS \n")
         end
     end)
 end
@@ -140,6 +93,52 @@ function unloadJsonMap()
         DeleteObject(v)
         num = k
     end
-    Citizen.Trace("fuzzys: unload ".. num .." props success ~~~")
+    Citizen.Trace("fuzzys: unload ".. num .." props success \n")
     props = {}
 end
+
+--[[Citizen.CreateThread(function()
+  -- SetRandomSeed(GetNetworkTime())
+  StartAudioScene("CHARACTER_CHANGE_IN_SKY_SCENE")
+  Citizen.InvokeNative(GetHashKey("ADD_TEXT_ENTRY"), 'FE_THDR_GTAO', '大逃杀模式测试')
+  SetPlayerHealthRechargeMultiplier(PlayerId(), 0)
+  SetPoliceIgnorePlayer(player, true)
+  SetDispatchCopsForPlayer(player, false)
+  SetMaxWantedLevel(0)
+  while true do
+    Citizen.Wait(0)  
+        DisplayRadar(false)
+        DisplayHud(false)
+        SetVehicleDensityMultiplierThisFrame(0.0)
+		SetPedDensityMultiplierThisFrame(0.0)
+		SetRandomVehicleDensityMultiplierThisFrame(0.0)
+		SetParkedVehicleDensityMultiplierThisFrame(0.0)
+		SetScenarioPedDensityMultiplierThisFrame(0.0, 0.0)
+		-- These natives do not have to be called everyframe.
+		SetGarbageTrucks(0)
+		SetRandomBoats(0)
+
+  end
+end)
+
+Citizen.CreateThread(function()
+  while true do
+    Citizen.Wait(50)
+
+    NetworkOverrideClockTime(12, 30, 0)
+
+    SetWeatherTypePersist("CLEAR")
+    SetWeatherTypeNowPersist("CLEAR")
+    SetWeatherTypeNow("CLEAR")
+    SetOverrideWeather("CLEAR")
+    
+    local ped = GetPlayerPed(-1)
+	local vehicle = GetVehiclePedIsIn(ped)
+    
+    if IsPedInAnyVehicle(ped, true) then
+        ResetPlayerStamina(PlayerId())
+    	SetVehRadioStation(vehicle, "OFF")
+    	SetVehicleEngineOn(vehicle,true)
+    end
+  end
+end)]]--

@@ -1,8 +1,3 @@
-AddEventHandler('onClientMapStart', function()
-  exports.spawnmanager:setAutoSpawn(true)
-  exports.spawnmanager:forceRespawn()
-end)
-
 local isFirstSpawn = true
 local gameHost = false
 local isGameStarted = false

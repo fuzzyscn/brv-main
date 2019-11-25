@@ -8,6 +8,7 @@ local sqlDateFormat = '%Y-%m-%d %H:%M:%S'
 local props = {}
 local prop_list = {}
 local no = 0
+local countrycodes = {"zh-cn", "zh", "en", "de", "pt", "es", "es-mx", "pl", "ru", "it", "fr", "ko", "ja"}
 
 RegisterServerEvent('fuzzys:playerSpawned')
 AddEventHandler('fuzzys:playerSpawned', function()
@@ -54,7 +55,7 @@ Citizen.CreateThread(function()
         prop_list = json.decode(data2)
     end
     no = prop_list.mission.prop.no
-    --  {"mission":{"prop":{"model":[],"loc":[],"no":0,"vRot":[]}}}
+    --{"mission":{"prop":{"model":[],"prpclr":[],"loc":[],"no":0,"vRot":[]}}}
     --print(props.mission.gen.propno)
     --print(prop_list.mission.prop.model[1])
     --unpackTable(prop_list.mission.prop.vRot)
@@ -76,6 +77,7 @@ function tablejsonList(pos, rot)
     }
     no = no + 1
     prop_list.mission.prop.no = no
+    table.insert(prop_list.mission.prop.prpclr, 7)
     table.insert(prop_list.mission.prop.model, model)
     table.insert(prop_list.mission.prop.loc, loc)
     table.insert(prop_list.mission.prop.vRot, vRot)
@@ -89,6 +91,42 @@ function unpackTable(tb)
             print(k .. " " .. v)
         end
     end
+end
+
+AddEventHandler('chatMessage', function(source, name, message)
+  local args = stringsplit(message, " ")
+  if (args[1] == "/json") then
+    CancelEvent()
+    if (args[2] ~= nil) then
+      --local playerID = tonumber(source)
+      local url = tostring(args[2])      
+      getJsonFromUrl(url)
+    end
+  end
+end)
+
+function getJsonFromUrl(url)
+    --for _, code in ipairs(countrycodes) do
+        --json_url = url.replace("2_0.jpg","0_0_"+code+".json")
+        --json_url = json_url.replace("1_0.jpg","0_0_"+code+".json")
+        PerformHttpRequest(url, function(errorCode, resultData, resultHeaders)
+            --print(errorCode)
+            props = json.decode(resultData)
+        end, "GET", "", {})--"Content-Type" = 'application/x-www-form-urlencoded'
+    -- end
+    -- return response
+end
+
+function stringsplit(inputstr, sep)
+    if sep == nil then
+        sep = "%s"
+    end
+    local t={} ; i=1
+    for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+        t[i] = str
+        i = i + 1
+    end
+    return t
 end
 
 --[[function loadPlayer(source)
