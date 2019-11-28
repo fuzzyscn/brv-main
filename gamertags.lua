@@ -3,7 +3,7 @@ Citizen.CreateThread(function()
 	while true do
 		Citizen.Wait(0)
 		for Player = 0, 31 do
-			--if Player ~= PlayerId() then
+			if Player ~= PlayerId() then
 				local IsConnected = NetworkIsPlayerConnected(Player)
 				local IsTagActive = IsMpGamerTagActive(PlayerTags[Player])
 
@@ -19,7 +19,7 @@ Citizen.CreateThread(function()
 					end
 					PlayerTags[Player] = nil
 				end
-            --end
+            end
 		end
 	end
 end)
