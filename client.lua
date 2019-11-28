@@ -60,7 +60,7 @@ Citizen.CreateThread(function()
         elseif WarMenu.IsMenuOpened('MainMenu') then
             if WarMenu.MenuButton("更换人物", "PiFuMenu") then			
 			elseif WarMenu.MenuButton("所有玩家", "AllPlayer") then
-            elseif WarMenu.Button('创建比赛-加载模型') then
+            elseif WarMenu.Button('加载模型') then
                 TriggerServerEvent('fuzzys:loadmodel', npcPlayer)
                 gameHost = true
             elseif WarMenu.Button('加载比赛地图') then

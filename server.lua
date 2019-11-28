@@ -8,7 +8,7 @@ local sqlDateFormat = '%Y-%m-%d %H:%M:%S'
 local props = {}
 local prop_list = {}
 local no = 0
-local countrycodes = {"zh-cn", "zh", "en", "de", "pt", "es", "es-mx", "pl", "ru", "it", "fr", "ko", "ja"}
+--local countrycodes = {"zh-cn", "zh", "en", "de", "pt", "es", "es-mx", "pl", "ru", "it", "fr", "ko", "ja"}
 
 RegisterServerEvent('fuzzys:playerSpawned')
 AddEventHandler('fuzzys:playerSpawned', function()
@@ -20,7 +20,7 @@ end)
 RegisterNetEvent('fuzzys:loadmodel')
 AddEventHandler('fuzzys:loadmodel', function(npcPlayer)
     gameHost = true
-    TriggerClientEvent('map:loadmap', source, prop_list.mission.prop)
+    TriggerClientEvent('map:loadmap', source, prop_list)
     print(npcPlayer)
 end)
 
@@ -31,26 +31,26 @@ AddEventHandler('fuzzys:getplayerid', function(i)
 end)
 
 RegisterServerEvent('map:sync')
-AddEventHandler('map:sync', function(pos, angle, new, rot)
+AddEventHandler('map:sync', function(pos, angle, new, rot, model)
     for _, playerId in ipairs(GetPlayers()) do
         if tostring(source) ~= tostring(playerId) then
             TriggerClientEvent('map:create', playerId, pos, angle)
         end
     end
-    tablejsonList(new, rot)
+    tablejsonList(new, rot, model)
 end)
 
 RegisterServerEvent('fuzzys:loadmap')
 AddEventHandler('fuzzys:loadmap', function()
-    TriggerClientEvent('map:loadmap', source, props.mission.prop)
+    TriggerClientEvent('map:loadmap', source, props)
 end)
 
 Citizen.CreateThread(function()
-    local data1 = LoadResourceFile(GetCurrentResourceName(), "race.json") or ""
+    local data1 = LoadResourceFile(GetCurrentResourceName(), "/json/stunt-chiliad.json") or ""
     if data1 ~= "" then
         props = json.decode(data1)
     end
-    local data2 = LoadResourceFile(GetCurrentResourceName(), "prop_list.json") or ""
+    local data2 = LoadResourceFile(GetCurrentResourceName(), "/json/prop_list.json") or ""
     if data2 ~= "" then
         prop_list = json.decode(data2)
     end
@@ -62,9 +62,9 @@ Citizen.CreateThread(function()
     --unpackTable(prop_list.mission.prop.loc)
 end)
 
-function tablejsonList(pos, rot)
+function tablejsonList(pos, rot, model)
     
-    local model = GetHashKey("stt_prop_ramp_jump_xs")
+    --local model = GetHashKey("stt_prop_ramp_jump_xs")
     local loc = {
         x = pos.x,
         y = pos.y,
@@ -82,7 +82,7 @@ function tablejsonList(pos, rot)
     table.insert(prop_list.mission.prop.loc, loc)
     table.insert(prop_list.mission.prop.vRot, vRot)
     --table.sort(prop_list.mission.prop)
-    SaveResourceFile(GetCurrentResourceName(), "prop_list.json", json.encode(prop_list), -1)
+    SaveResourceFile(GetCurrentResourceName(), "/json/prop_list.json", json.encode(prop_list), -1)
 end
 function unpackTable(tb)
     for k, v in pairs(tb) do
@@ -110,8 +110,11 @@ function getJsonFromUrl(url)
         --json_url = url.replace("2_0.jpg","0_0_"+code+".json")
         --json_url = json_url.replace("1_0.jpg","0_0_"+code+".json")
         PerformHttpRequest(url, function(errorCode, resultData, resultHeaders)
-            --print(errorCode)
-            props = json.decode(resultData)
+            if errorCode == 200 then
+                props = json.decode(resultData)
+            else
+                print("Url Error!!!" .. errorCode)
+            end
         end, "GET", "", {})--"Content-Type" = 'application/x-www-form-urlencoded'
     -- end
     -- return response
