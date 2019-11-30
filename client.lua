@@ -194,7 +194,8 @@ Citizen.CreateThread( function()
         local pos = GetEntityCoords(GetPlayerPed(-1))
         local angle = GetEntityHeading(GetPlayerPed(-1))
         if IsControlJustPressed(0, 38) then
-            CreateMap(pos, angle, selectModelHash)
+            local handle = CreateMap(pos, angle, selectModelHash)
+            TriggerServerEvent('map:sync', pos, angle, handle[1], handle[2], selectModelHash)
         end
         
         -- if gameHost == true then
@@ -239,6 +240,7 @@ end)
 function CreateMap(pos, angle, model)
     --local model = "stt_prop_ramp_jump_xs"
     --local model = joaat(model)
+    local callback = {}
     while not HasModelLoaded(model) do
         RequestModel(model)
         Wait(0)
@@ -249,15 +251,17 @@ function CreateMap(pos, angle, model)
     local offset = math.abs(min.x)
 
     SetEntityHeading(obj, angle + 90)
-    --PlaceObjectOnGroundProperly(obj)
+    PlaceObjectOnGroundProperly(obj)
 
     local new = GetOffsetFromEntityInWorldCoords(obj, offset, 0, 0)
+    table.insert(callback, new)
     SetEntityCoords(obj, new.x, new.y, new.z - 0.2)
     FreezeEntityPosition(obj, true)
     SetObjectTextureVariant(obj, 3)
     local rot = GetEntityRotation(obj, 2)
-    TriggerServerEvent('map:sync', pos, angle, new, rot, model)
+    table.insert(callback, rot)
     table.insert(props, obj)
+    return callback
 end
 
 function loadJsonMap(jsonTable)
