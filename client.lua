@@ -1,5 +1,6 @@
 local props = {}
 local selectModelHash = -1088903588
+local selectColorId = 0
 
 local function func_192(sba) -- from decompiled R* scripts
 	if sba == 1 then
@@ -71,7 +72,7 @@ local isFirstSpawn = true
 local gameHost = false
 local isGameStarted = false
 local playerInLobby = false
-local npcPlayer = 123
+local npcPlayer = 233333333
 
 AddEventHandler("playerSpawned", function(spawn)
 
@@ -98,10 +99,11 @@ AddEventHandler("playerSpawned", function(spawn)
     end)
 
     playerInLobby = true
-    --TriggerServerEvent('fuzzys:playerSpawned')
-    -- if isFirstSpawn then
-        -- isFirstSpawn = false
-    -- end
+
+    if isFirstSpawn then
+        TriggerServerEvent('fuzzys:playerSpawned')
+        isFirstSpawn = false
+    end
 end)
 
 _menuPool = NativeUI.CreatePool()
@@ -125,7 +127,7 @@ function ShowPiFuMenu(menu)
     end
 end
 
-function ShowAllPlayer(menu)
+--[[function ShowAllPlayer(menu)
     local submenu = _menuPool:AddSubMenu(menu, "玩家列表", "显示所有在线玩家。", 1300, 80)
     for i = 0, 31 do
         if NetworkIsPlayerActive(i) then
@@ -137,31 +139,48 @@ end
 
 function MapEditor(menu)
     local propHash = {-1088903588,3287988974,3906373800,4228722453,3124504613,993442923,4067691788,1431235846,1832852758,346059280,620582592,85342060,483832101,930976262,1677872320,708828172,950795200,3034310442,2419563138,3430162838,2992496910,1518201148,117169896,2815009181}
-    local newitem = NativeUI.CreateListItem("选择生成模型", propHash, 1)
-    menu:AddItem(newitem)
+    local propList = NativeUI.CreateListItem("选择生成模型", propHash, 1)
+    menu:AddItem(propList)
     menu.OnListChange = function(sender, item, index)
-        if item == newitem then
+        if item == propList then
             selectModelHash = item:IndexToItem(index)
             ShowNotification("切换模型 ~b~" .. selectModelHash .. "~w~...")
         end
     end
-end
+end]]--
 
-function loadRaceMap(menu)
+function MapEditor(menu)
     local submenu = _menuPool:AddSubMenu(menu, "地图编辑器", "", 1300, 80)
-    local loadProp = NativeUI.CreateItem("加载玩家地图", "")
-    local loadMap = NativeUI.CreateItem("加载比赛地图", "")
-    local unloadMap = NativeUI.CreateItem("卸载地图", "")
+    local propHash = {-1088903588,3287988974,3906373800,4228722453,3124504613,993442923,4067691788,1431235846,1832852758,346059280,620582592,85342060,483832101,930976262,1677872320,708828172,950795200,3034310442,2419563138,3430162838,2992496910,1518201148,117169896,2815009181}
+    local propColor = {0,1,2,3,4,5,6,7,8,9}
+    local mapname = "stunt-chiliad"
+    local propList = NativeUI.CreateListItem("选择道具哈希", propHash, 1)
+    local colorList = NativeUI.CreateListItem("选择道具颜色", propColor, 1)
+    local loadProp = NativeUI.CreateItem("加载道具", "加载玩家放置的道具")
+    local loadMap = NativeUI.CreateItem("加载比赛", "加载比赛地图和检查点")
+    local unloadMap = NativeUI.CreateItem("卸载所有道具", "删除游戏中所有道具的模型")
+    submenu:AddItem(propList)
+    submenu:AddItem(colorList)
     submenu:AddItem(loadProp)
     submenu:AddItem(loadMap)
     submenu:AddItem(unloadMap)
-
+    
+    submenu.OnListChange = function(sender, item, index)
+        if item == propList then
+            selectModelHash = item:IndexToItem(index)
+            ShowNotification("切换模型 ~b~" .. selectModelHash .. "~w~...")
+        end
+        if item == colorList then
+            selectColorId = item:IndexToItem(index)
+            ShowNotification("切换颜色 ~b~" .. selectColorId .. "~w~...")
+        end
+    end
     submenu.OnItemSelect = function(sender, item, index)
         if item == loadProp then
             TriggerServerEvent('fuzzys:loadmodel', npcPlayer)
             gameHost = false
         elseif item == loadMap then
-            TriggerServerEvent('fuzzys:loadmap')
+            TriggerServerEvent('fuzzys:loadmap', mapname)
             gameHost = true
         elseif item == unloadMap then
             unloadJsonMap()
@@ -172,7 +191,6 @@ end
 ShowPiFuMenu(mainMenu)
 --ShowAllPlayer(mainMenu)
 MapEditor(mainMenu)
-loadRaceMap(mainMenu)
 
 _menuPool:RefreshIndex()
 _menuPool:MouseControlsEnabled(false)
@@ -194,8 +212,8 @@ Citizen.CreateThread( function()
         local pos = GetEntityCoords(GetPlayerPed(-1))
         local angle = GetEntityHeading(GetPlayerPed(-1))
         if IsControlJustPressed(0, 38) then
-            local handle = CreateMap(pos, angle, selectModelHash)
-            TriggerServerEvent('map:sync', pos, angle, handle[1], handle[2], selectModelHash)
+            local handle = CreateMap(pos, angle, selectModelHash, selectColorId)
+            TriggerServerEvent('map:sync', pos, angle, handle[1], handle[2], selectModelHash, selectColorId)
         end
         
         -- if gameHost == true then
@@ -228,8 +246,8 @@ AddEventHandler('onResourceStop', function(resourceName)
 end)
 
 RegisterNetEvent('map:create')
-AddEventHandler('map:create', function(pos, angle, model)
-    CreateMap(pos, angle, model)
+AddEventHandler('map:create', function(pos, angle, model, color)
+    CreateMap(pos, angle, model, color)
 end)
 
 RegisterNetEvent('map:loadmap')
@@ -237,7 +255,7 @@ AddEventHandler('map:loadmap', function(jsonTable)
     loadJsonMap(jsonTable)
 end)
 
-function CreateMap(pos, angle, model)
+function CreateMap(pos, angle, model, color)
     --local model = "stt_prop_ramp_jump_xs"
     --local model = joaat(model)
     local callback = {}
@@ -255,9 +273,9 @@ function CreateMap(pos, angle, model)
 
     local new = GetOffsetFromEntityInWorldCoords(obj, offset, 0, 0)
     table.insert(callback, new)
-    SetEntityCoords(obj, new.x, new.y, new.z - 0.2)
+    SetEntityCoords(obj, new.x, new.y, new.z - 0.1)
     FreezeEntityPosition(obj, true)
-    SetObjectTextureVariant(obj, 3)
+    SetObjectTextureVariant(obj, color)
     local rot = GetEntityRotation(obj, 2)
     table.insert(callback, rot)
     table.insert(props, obj)

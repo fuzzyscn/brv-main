@@ -1,9 +1,5 @@
 local gameHost = false
 local players = {}
-local safeZonesCoords = {}
-local isGameStarted = false
-local nbAlivePlayers = 0
-local gameId = 0
 local sqlDateFormat = '%Y-%m-%d %H:%M:%S'
 local props = {}
 local prop_list = {}
@@ -12,37 +8,43 @@ local no = 0
 
 RegisterServerEvent('fuzzys:playerSpawned')
 AddEventHandler('fuzzys:playerSpawned', function()
-  if not players[source] then
+  --if not players[source] then
     --loadPlayer(source)
-  end
+  --end
+  TriggerClientEvent('map:loadmap', source, props)
 end)
 
 RegisterNetEvent('fuzzys:loadmodel')
 AddEventHandler('fuzzys:loadmodel', function(npcPlayer)
+    print(npcPlayer)
     gameHost = true
     TriggerClientEvent('map:loadmap', source, prop_list)
-    print(npcPlayer)
 end)
 
 RegisterNetEvent('fuzzys:getplayerid')
 AddEventHandler('fuzzys:getplayerid', function(i)
     print(i)
-    print(os.date(sqlDateFormat))
 end)
 
 RegisterServerEvent('map:sync')
-AddEventHandler('map:sync', function(pos, angle, new, rot, model)
+AddEventHandler('map:sync', function(pos, angle, new, rot, model, color)
     for _, playerId in ipairs(GetPlayers()) do
         if tostring(source) ~= tostring(playerId) then
-            TriggerClientEvent('map:create', playerId, pos, angle, model)
+            TriggerClientEvent('map:create', playerId, pos, angle, model, color)
         end
     end
-    tablejsonList(new, rot, model)
+    tablejsonList(new, rot, model, color)
 end)
 
 RegisterServerEvent('fuzzys:loadmap')
-AddEventHandler('fuzzys:loadmap', function()
+AddEventHandler('fuzzys:loadmap', function(mapname)
+    print(os.date(sqlDateFormat) .. " -加载地图- " .. mapname)
+    local data = LoadResourceFile(GetCurrentResourceName(), "/json/" .. mapname .. ".json") or ""
+    if data ~= "" then
+        props = json.decode(data)
+    end
     TriggerClientEvent('map:loadmap', source, props)
+    SaveResourceFile(GetCurrentResourceName(), "/json/prop_list.json", json.encode(prop_list), -1)
 end)
 
 Citizen.CreateThread(function()
@@ -62,13 +64,13 @@ Citizen.CreateThread(function()
     --unpackTable(prop_list.mission.prop.loc)
 end)
 
-function tablejsonList(pos, rot, model)
+function tablejsonList(pos, rot, model, color)
     
     --local model = GetHashKey("stt_prop_ramp_jump_xs")
     local loc = {
         x = pos.x,
         y = pos.y,
-        z = pos.z - 0.2,
+        z = pos.z - 0.1,
     }
     local vRot = {
         x = rot.x,
@@ -77,7 +79,7 @@ function tablejsonList(pos, rot, model)
     }
     no = no + 1
     prop_list.mission.prop.no = no
-    table.insert(prop_list.mission.prop.prpclr, 3)
+    table.insert(prop_list.mission.prop.prpclr, color)
     table.insert(prop_list.mission.prop.model, model)
     table.insert(prop_list.mission.prop.loc, loc)
     table.insert(prop_list.mission.prop.vRot, vRot)
