@@ -78,3 +78,9 @@ function changePifu(name)
     
     GiveWeaponToPed(GetPlayerPed(-1), GetHashKey('gadget_parachute'), 1, false, false)
 end
+
+function ShowNotification(text)
+    SetNotificationTextEntry("STRING")
+    AddTextComponentString(text)
+    DrawNotification(false, false)
+end

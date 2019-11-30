@@ -34,7 +34,7 @@ RegisterServerEvent('map:sync')
 AddEventHandler('map:sync', function(pos, angle, new, rot, model)
     for _, playerId in ipairs(GetPlayers()) do
         if tostring(source) ~= tostring(playerId) then
-            TriggerClientEvent('map:create', playerId, pos, angle)
+            TriggerClientEvent('map:create', playerId, pos, angle, model)
         end
     end
     tablejsonList(new, rot, model)
@@ -46,7 +46,7 @@ AddEventHandler('fuzzys:loadmap', function()
 end)
 
 Citizen.CreateThread(function()
-    local data1 = LoadResourceFile(GetCurrentResourceName(), "/json/stunt-chiliad.json") or ""
+    local data1 = LoadResourceFile(GetCurrentResourceName(), "/json/race.json") or ""
     if data1 ~= "" then
         props = json.decode(data1)
     end
@@ -68,7 +68,7 @@ function tablejsonList(pos, rot, model)
     local loc = {
         x = pos.x,
         y = pos.y,
-        z = pos.z - 0.1,
+        z = pos.z - 0.2,
     }
     local vRot = {
         x = rot.x,
@@ -77,12 +77,12 @@ function tablejsonList(pos, rot, model)
     }
     no = no + 1
     prop_list.mission.prop.no = no
-    table.insert(prop_list.mission.prop.prpclr, 7)
+    table.insert(prop_list.mission.prop.prpclr, 3)
     table.insert(prop_list.mission.prop.model, model)
     table.insert(prop_list.mission.prop.loc, loc)
     table.insert(prop_list.mission.prop.vRot, vRot)
     --table.sort(prop_list.mission.prop)
-    SaveResourceFile(GetCurrentResourceName(), "/json/prop_list.json", json.encode(prop_list), -1)
+    --SaveResourceFile(GetCurrentResourceName(), "/json/prop_list.json", json.encode(prop_list), -1)
 end
 function unpackTable(tb)
     for k, v in pairs(tb) do

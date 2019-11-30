@@ -1,4 +1,5 @@
 local props = {}
+local selectModelHash = -1088903588
 
 local function func_192(sba) -- from decompiled R* scripts
 	if sba == 1 then
@@ -70,14 +71,13 @@ local isFirstSpawn = true
 local gameHost = false
 local isGameStarted = false
 local playerInLobby = false
-local Players = {}
 local npcPlayer = 123
 
 AddEventHandler("playerSpawned", function(spawn)
 
     Citizen.CreateThread(function()
         local playerPed = GetPlayerPed(-1)
-        -- local pedhash = GetHashKey("a_m_y_skater_01")
+        -- local pedhash = joaat("a_m_y_skater_01")
         -- RequestModel(pedhash)
         -- while not HasModelLoaded(pedhash) do
             -- Citizen.Wait(0)
@@ -93,23 +93,23 @@ AddEventHandler("playerSpawned", function(spawn)
         -- SetPedComponentVariation(playerPed, 4, 1, 5, 2) -- Pantalon
         -- SetPedComponentVariation(playerPed, 6, 1, 0, 2) -- Shoes
         -- SetPedComponentVariation(playerPed, 11, 7, 2, 2) -- Jacket
-        GiveWeaponToPed(playerPed, GetHashKey('gadget_parachute'), 1, false, false)
+        GiveWeaponToPed(playerPed, joaat('gadget_parachute'), 1, false, false)
         SetPedRandomComponentVariation(playerPed, true)
     end)
 
     playerInLobby = true
-    TriggerServerEvent('fuzzys:playerSpawned')
+    --TriggerServerEvent('fuzzys:playerSpawned')
     -- if isFirstSpawn then
         -- isFirstSpawn = false
     -- end
 end)
 
 _menuPool = NativeUI.CreatePool()
-mainMenu = NativeUI.CreateMenu("地图编辑器", "~b~FiveM创造模式编辑器")
+mainMenu = NativeUI.CreateMenu("主菜单", "~b~FiveM地图编辑器", 1300, 80)
 _menuPool:Add(mainMenu)
 
 function ShowPiFuMenu(menu)
-    local submenu = _menuPool:AddSubMenu(menu, "皮肤菜单", "显示所有可用人物mod。")
+    local submenu = _menuPool:AddSubMenu(menu, "皮肤菜单", "所有可用人物mod。", 1300, 80)
     local PiFu1 = NativeUI.CreateItem("孙悟空", "七龙珠主角孙悟空")
     local PiFu2 = NativeUI.CreateItem("蒂法", "最终幻想女角色")
 
@@ -119,65 +119,60 @@ function ShowPiFuMenu(menu)
     submenu.OnItemSelect = function(sender, item, index)
         if item == PiFu1 then
             changePifu('Goku')
-        end
-        if item == PiFu2 then
+        elseif item == PiFu2 then
             changePifu('Tifa')
         end
     end
 end
 
 function ShowAllPlayer(menu)
-    local submenu1 = _menuPool:AddSubMenu(menu, "玩家列表", "显示所有在线玩家。")
+    local submenu = _menuPool:AddSubMenu(menu, "玩家列表", "显示所有在线玩家。", 1300, 80)
     for i = 0, 31 do
         if NetworkIsPlayerActive(i) then
-            local player = NativeUI.CreateItem(GetPlayerName(i), "玩家ID:" .. GetPlayerServerId(i))
-            submenu1:AddItem(player)
-        end
-    end
-
-    submenu1.OnItemSelect = function(sender, item, index)
-        if item == player then
-            TriggerServerEvent('fuzzys:getplayerid', PlayerId())--??
+            submenu:AddItem(NativeUI.CreateItem(GetPlayerName(i), "玩家ID:" .. GetPlayerServerId(i)))
+            TriggerServerEvent('fuzzys:getplayerid', i)
         end
     end
 end
 
-function UnloadMap(menu)
-    local UnloadAllProp = NativeUI.CreateItem("卸载地图", "")
-    menu:AddItem(UnloadAllProp)
-
-    menu.OnItemSelect = function(sender, item, index)
-        if item == UnloadAllProp then
-            unloadJsonMap()
+function MapEditor(menu)
+    local propHash = {-1088903588,3287988974,3906373800,4228722453,3124504613,993442923,4067691788,1431235846,1832852758,346059280,620582592,85342060,483832101,930976262,1677872320,708828172,950795200,3034310442,2419563138,3430162838,2992496910,1518201148,117169896,2815009181}
+    local newitem = NativeUI.CreateListItem("选择生成模型", propHash, 1)
+    menu:AddItem(newitem)
+    menu.OnListChange = function(sender, item, index)
+        if item == newitem then
+            selectModelHash = item:IndexToItem(index)
+            ShowNotification("切换模型 ~b~" .. selectModelHash .. "~w~...")
         end
     end
 end
 
 function loadRaceMap(menu)
-    local submenu3 = _menuPool:AddSubMenu(menu, "加载地图", "")
+    local submenu = _menuPool:AddSubMenu(menu, "地图编辑器", "", 1300, 80)
     local loadProp = NativeUI.CreateItem("加载玩家地图", "")
     local loadMap = NativeUI.CreateItem("加载比赛地图", "")
-    submenu3:AddItem(loadProp)
-    submenu3:AddItem(loadMap)
+    local unloadMap = NativeUI.CreateItem("卸载地图", "")
+    submenu:AddItem(loadProp)
+    submenu:AddItem(loadMap)
+    submenu:AddItem(unloadMap)
 
-    submenu3.OnItemSelect = function(sender, item, index)
+    submenu.OnItemSelect = function(sender, item, index)
         if item == loadProp then
             TriggerServerEvent('fuzzys:loadmodel', npcPlayer)
             gameHost = false
-        end
-        if item == loadMap then
+        elseif item == loadMap then
             TriggerServerEvent('fuzzys:loadmap')
             gameHost = true
+        elseif item == unloadMap then
+            unloadJsonMap()
         end
     end
 end
 
 ShowPiFuMenu(mainMenu)
-ShowAllPlayer(mainMenu)
--- MapEditor(mainMenu)
---loadPlayerMap(mainMenu)
+--ShowAllPlayer(mainMenu)
+MapEditor(mainMenu)
 loadRaceMap(mainMenu)
-UnloadMap(mainMenu)
 
 _menuPool:RefreshIndex()
 _menuPool:MouseControlsEnabled(false)
@@ -189,14 +184,24 @@ Citizen.CreateThread(function()
         _menuPool:ProcessMenus()
         if IsControlJustPressed(0, 244) then
             mainMenu:Visible(not mainMenu:Visible())
-            ShowNotification("按M显示主菜单。")
+        end
+    end
+end)
+
+Citizen.CreateThread( function()
+    while true do
+    Citizen.Wait(1)
+        local pos = GetEntityCoords(GetPlayerPed(-1))
+        local angle = GetEntityHeading(GetPlayerPed(-1))
+        if IsControlJustPressed(0, 38) then
+            CreateMap(pos, angle, selectModelHash)
         end
         
-        if gameHost == true then
-            TogglePvP(false)
-            local Players = GetPlayers()
-            RenderPlayerList(Players)
-        end
+        -- if gameHost == true then
+            -- TogglePvP(false)
+            -- local Players = GetPlayers()
+            -- RenderPlayerList(Players)
+        -- end
         
         if isFirstSpawn then
             AddTextEntry('FirstSpawnMessageHeader', '~r~FiveM创造模式')
@@ -214,11 +219,129 @@ Citizen.CreateThread(function()
     end
 end)
 
-function ShowNotification(text)
-    SetNotificationTextEntry("STRING")
-    AddTextComponentString(text)
-    DrawNotification(false, false)
+AddEventHandler('onResourceStop', function(resourceName)
+    if resourceName ~= GetCurrentResourceName() then
+      return
+    end
+    unloadJsonMap()
+end)
+
+RegisterNetEvent('map:create')
+AddEventHandler('map:create', function(pos, angle, model)
+    CreateMap(pos, angle, model)
+end)
+
+RegisterNetEvent('map:loadmap')
+AddEventHandler('map:loadmap', function(jsonTable)
+    loadJsonMap(jsonTable)
+end)
+
+function CreateMap(pos, angle, model)
+    --local model = "stt_prop_ramp_jump_xs"
+    --local model = joaat(model)
+    while not HasModelLoaded(model) do
+        RequestModel(model)
+        Wait(0)
+    end
+    local obj = CreateObjectNoOffset(model, pos, false, false, false)
+
+    local min, max = GetModelDimensions(model)
+    local offset = math.abs(min.x)
+
+    SetEntityHeading(obj, angle + 90)
+    --PlaceObjectOnGroundProperly(obj)
+
+    local new = GetOffsetFromEntityInWorldCoords(obj, offset, 0, 0)
+    SetEntityCoords(obj, new.x, new.y, new.z - 0.2)
+    FreezeEntityPosition(obj, true)
+    SetObjectTextureVariant(obj, 3)
+    local rot = GetEntityRotation(obj, 2)
+    TriggerServerEvent('map:sync', pos, angle, new, rot, model)
+    table.insert(props, obj)
 end
+
+function loadJsonMap(jsonTable)
+    --unloadJsonMap()
+    Citizen.CreateThread(function()
+        local prop = jsonTable.mission.prop
+        local dprop = jsonTable.mission.dprop
+        
+        if prop.no > 0 then
+            for k = 1, prop.no do
+                local hash = tonumber(prop.model[k])
+                local pos = vector3(tonumber(prop.loc[k].x),tonumber(prop.loc[k].y),tonumber(prop.loc[k].z))
+                local rot = vector3(tonumber(prop.vRot[k].x),tonumber(prop.vRot[k].y),tonumber(prop.vRot[k].z))
+                local colorid = tonumber(prop.prpclr[k])
+                while not HasModelLoaded(hash) do
+                    RequestModel(hash)
+                    Wait(0)
+                end
+                local obj = CreateObjectNoOffset(hash, pos, false, false, false)
+                if prop.head then
+                    local heading = tonumber(prop.head[k])
+                    SetEntityHeading(obj, heading)
+                end
+                SetEntityRotation(obj, rot, 2, true)
+                FreezeEntityPosition(obj, true)
+                SetObjectTextureVariant(obj, colorid)
+                if prop.prpsba then
+                    local prpsba = tonumber(prop.prpsba[k])
+                    setSBA(obj, prpsba)
+                end
+                if hash == joaat("stt_prop_hoop_constraction_01a") then
+                    local dict = "scr_stunts"
+                    Citizen.InvokeNative(0x4B10CEA9187AFFE6, dict)
+                    if Citizen.InvokeNative(0xC7225BF8901834B2, dict) then
+                        Citizen.InvokeNative(0xFF62C471DC947844, dict)
+                        Citizen.InvokeNative(0x2FBC377D2B29B60F, "scr_stunts_fire_ring", obj, vector3(0, 0, 25), vector3(-12.5, 0, 0), 1.0, 0,0,0)
+                    end
+                elseif hash == joaat("stt_prop_hoop_small_01") then
+                    local dict = "core"
+                    Citizen.InvokeNative(0x4B10CEA9187AFFE6, dict)
+                    if Citizen.InvokeNative(0xC7225BF8901834B2, dict) then
+                        Citizen.InvokeNative(0xFF62C471DC947844, dict)
+                        Citizen.InvokeNative(0x2FBC377D2B29B60F, "ent_amb_fire_ring", obj, vector3(0, 0, 4.5), vector3(0, 0, 90), 3.5, 0,0,0)
+                    end
+                end
+                table.insert(props, obj)
+            end
+            Citizen.Trace("Fuzzys: Load ".. prop.no .." Props Success \n")
+        end
+        if dprop and (dprop.no > 0) then
+            for k = 1, dprop.no do
+                local hash = tonumber(dprop.model[k])
+                local pos = vector3(tonumber(dprop.loc[k].x),tonumber(dprop.loc[k].y),tonumber(dprop.loc[k].z))
+                local rot = vector3(tonumber(dprop.vRot[k].x),tonumber(dprop.vRot[k].y),tonumber(dprop.vRot[k].z))
+                while not HasModelLoaded(hash) do
+                    RequestModel(hash)
+                    Wait(0)
+                end
+                local obj = CreateObjectNoOffset(hash, pos, false, false, true)
+                local heading = tonumber(dprop.head[k])
+                SetEntityHeading(obj, heading)
+                SetEntityRotation(obj, rot, 2, true)
+                FreezeEntityPosition(obj, false)
+                table.insert(props, obj)
+            end
+            Citizen.Trace("Fuzzys: Load ".. dprop.no .." Dynamic Props Success \n")
+        end
+        if jsonTable.mission.race then
+            local startPos = jsonTable.mission.race.grid
+            SetEntityCoords(GetPlayerPed(-1), startPos.x, startPos.y, startPos.z, true, false, false, true)
+        end
+    end)
+end
+
+function unloadJsonMap()
+    local num = 0
+    for k, v in ipairs(props) do
+        DeleteObject(v)
+        num = k
+    end
+    Citizen.Trace("Fuzzys: unload ".. num .." props success \n")
+    props = {}
+end
+
 
 --[[Citizen.CreateThread(function()
     local menuOpen = false
@@ -320,147 +443,12 @@ end
         Wait(0)
       end
     end
-end)]]--
-
-
-Citizen.CreateThread( function()
-    while true do
-    Citizen.Wait(1)
-        local pos = GetEntityCoords(GetPlayerPed(-1))
-        local angle = GetEntityHeading(GetPlayerPed(-1))
-        if IsControlJustPressed(0, 38) then
-            CreateMap(pos, angle)
-        end
-    end
 end)
 
-AddEventHandler('onResourceStop', function(resourceName)
-    if resourceName ~= GetCurrentResourceName() then
-      return
-    end
-    unloadJsonMap()
-end)
-
-RegisterNetEvent('map:create')
-AddEventHandler('map:create', function(pos, angle)
-    CreateMap(pos, angle)
-end)
-
-RegisterNetEvent('map:loadmap')
-AddEventHandler('map:loadmap', function(jsonTable)
-    loadJsonMap(jsonTable)
-end)
-
-function CreateMap(pos, angle)
-    --local model = "stt_prop_ramp_jump_xs"
-    local hash = 3287988974-- -1088903588 --GetHashKey(model)
-    while not HasModelLoaded(hash) do
-        RequestModel(hash)
-        Wait(0)
-    end
-    local obj = CreateObjectNoOffset(hash, pos, false, false, false)
-
-    local min, max = GetModelDimensions(hash)
-    local offset = math.abs(min.x)
-
-    SetEntityHeading(obj, angle + 90)
-    PlaceObjectOnGroundProperly(obj)
-
-    local new = GetOffsetFromEntityInWorldCoords(obj, offset, 0, 0)
-    SetEntityCoords(obj, new.x, new.y, new.z - 0.1)
-    FreezeEntityPosition(obj, true)
-    SetObjectTextureVariant(obj, 7)
-    local rot = GetEntityRotation(obj, 2)
-    TriggerServerEvent('map:sync', pos, angle, new, rot, hash)
-    table.insert(props, obj)
-end
-
-function loadJsonMap(jsonTable)
-    --unloadJsonMap()
-    Citizen.CreateThread(function()
-        local prop = jsonTable.mission.prop
-        local dprop = jsonTable.mission.dprop
-        
-        if prop.no > 0 then
-            for k = 1, prop.no do
-                local hash = tonumber(prop.model[k])
-                local pos = vector3(tonumber(prop.loc[k].x),tonumber(prop.loc[k].y),tonumber(prop.loc[k].z))
-                local rot = vector3(tonumber(prop.vRot[k].x),tonumber(prop.vRot[k].y),tonumber(prop.vRot[k].z))
-                local colorid = tonumber(prop.prpclr[k])
-                while not HasModelLoaded(hash) do
-                    RequestModel(hash)
-                    Wait(0)
-                end
-                local obj = CreateObjectNoOffset(hash, pos, false, false, false)
-                if prop.head then
-                    local heading = tonumber(prop.head[k])
-                    SetEntityHeading(obj, heading)
-                end
-                SetEntityRotation(obj, rot, 2, true)
-                FreezeEntityPosition(obj, true)
-                SetObjectTextureVariant(obj, colorid)
-                if prop.prpsba then
-                    local prpsba = tonumber(prop.prpsba[k])
-                    setSBA(obj, prpsba)
-                end
-                if hash == GetHashKey("stt_prop_hoop_constraction_01a") then
-                    local dict = "scr_stunts"
-                    Citizen.InvokeNative(0x4B10CEA9187AFFE6, dict)
-                    if Citizen.InvokeNative(0xC7225BF8901834B2, dict) then
-                        Citizen.InvokeNative(0xFF62C471DC947844, dict)
-                        Citizen.InvokeNative(0x2FBC377D2B29B60F, "scr_stunts_fire_ring", obj, vector3(0, 0, 25), vector3(-12.5, 0, 0), 1.0, 0,0,0)
-                    end
-                elseif hash == GetHashKey("stt_prop_hoop_small_01") then
-                    local dict = "core"
-                    Citizen.InvokeNative(0x4B10CEA9187AFFE6, dict)
-                    if Citizen.InvokeNative(0xC7225BF8901834B2, dict) then
-                        Citizen.InvokeNative(0xFF62C471DC947844, dict)
-                        Citizen.InvokeNative(0x2FBC377D2B29B60F, "ent_amb_fire_ring", obj, vector3(0, 0, 4.5), vector3(0, 0, 90), 3.5, 0,0,0)
-                    end
-                end
-                table.insert(props, obj)
-            end
-            Citizen.Trace("Fuzzys: Load ".. prop.no .." Props Success \n")
-        end
-        if dprop and (dprop.no > 0) then
-            for k = 1, dprop.no do
-                local hash = tonumber(dprop.model[k])
-                local pos = vector3(tonumber(dprop.loc[k].x),tonumber(dprop.loc[k].y),tonumber(dprop.loc[k].z))
-                local rot = vector3(tonumber(dprop.vRot[k].x),tonumber(dprop.vRot[k].y),tonumber(dprop.vRot[k].z))
-                while not HasModelLoaded(hash) do
-                    RequestModel(hash)
-                    Wait(0)
-                end
-                local obj = CreateObjectNoOffset(hash, pos, false, false, true)
-                local heading = tonumber(dprop.head[k])
-                SetEntityHeading(obj, heading)
-                SetEntityRotation(obj, rot, 2, true)
-                FreezeEntityPosition(obj, false)
-                table.insert(props, obj)
-            end
-            Citizen.Trace("Fuzzys: Load ".. dprop.no .." Dynamic Props Success \n")
-        end
-        if jsonTable.mission.race then
-            local startPos = jsonTable.mission.race.grid
-            SetEntityCoords(GetPlayerPed(-1), startPos.x, startPos.y, startPos.z, true, false, false, true)
-        end
-    end)
-end
-
-function unloadJsonMap()
-    local num = 0
-    for k, v in ipairs(props) do
-        DeleteObject(v)
-        num = k
-    end
-    Citizen.Trace("Fuzzys: unload ".. num .." props success \n")
-    props = {}
-end
-
---[[Citizen.CreateThread(function()
+Citizen.CreateThread(function()
   -- SetRandomSeed(GetNetworkTime())
   StartAudioScene("CHARACTER_CHANGE_IN_SKY_SCENE")
-  Citizen.InvokeNative(GetHashKey("ADD_TEXT_ENTRY"), 'FE_THDR_GTAO', '大逃杀模式测试')
+  Citizen.InvokeNative(joaat("ADD_TEXT_ENTRY"), 'FE_THDR_GTAO', '大逃杀模式测试')
   SetPlayerHealthRechargeMultiplier(PlayerId(), 0)
   SetPoliceIgnorePlayer(player, true)
   SetDispatchCopsForPlayer(player, false)
