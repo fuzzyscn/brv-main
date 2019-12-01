@@ -11,7 +11,7 @@ AddEventHandler('fuzzys:playerSpawned', function()
   --if not players[source] then
     --loadPlayer(source)
   --end
-  TriggerClientEvent('map:loadmap', source, props)
+  --TriggerClientEvent('map:loadmap', source, props)
 end)
 
 RegisterNetEvent('fuzzys:loadmodel')
@@ -38,13 +38,13 @@ end)
 
 RegisterServerEvent('fuzzys:loadmap')
 AddEventHandler('fuzzys:loadmap', function(mapname)
-    print(os.date(sqlDateFormat) .. " -加载地图- " .. mapname)
+    print(os.date(sqlDateFormat) .. " 加载地图: " .. mapname)
     local data = LoadResourceFile(GetCurrentResourceName(), "/json/" .. mapname .. ".json") or ""
     if data ~= "" then
         props = json.decode(data)
     end
     TriggerClientEvent('map:loadmap', source, props)
-    SaveResourceFile(GetCurrentResourceName(), "/json/prop_list.json", json.encode(prop_list), -1)
+    SaveResourceFile(GetCurrentResourceName(), "/json/fuzzys.json", json.encode(prop_list), -1)
 end)
 
 Citizen.CreateThread(function()
@@ -103,6 +103,7 @@ AddEventHandler('chatMessage', function(source, name, message)
       --local playerID = tonumber(source)
       local url = tostring(args[2])      
       getJsonFromUrl(url)
+      TriggerClientEvent('map:loadmap', source, props)
     end
   end
 end)

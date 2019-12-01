@@ -1,6 +1,29 @@
 local props = {}
-local selectModelHash = -1088903588
-local selectColorId = 0
+local race = {}
+local selectModel = "stt_prop_track_speedup"
+local selectColorId = 3
+local racename = "race"
+-- CONFIGURATION
+local cp_radius = 9.0
+local cp_height = 8.5
+local cp_colour = 13 -- Checkpoint colour https://pastebin.com/d9aHPbXN
+local cp_icon_colour = 134 -- Checkpoint icon colour
+local cp_r, cp_g, cp_b, cp_a = GetHudColour(cp_colour)
+local cpi_r, cpi_g, cpi_b, cpi_a = GetHudColour(cp_icon_colour)
+local next_cp_id = 1
+--local race_position = 1
+local current_lap = 1
+RequestScriptAudioBank("DLC_STUNT/STUNT_RACE_01", false, -1)
+RequestScriptAudioBank("DLC_STUNT/STUNT_RACE_02", false, -1)
+RequestScriptAudioBank("DLC_STUNT/STUNT_RACE_03", false, -1)
+RequestAdditionalText("RACES", 0);
+StatSetInt('MP0_STAMINA', 100, true)
+StatSetInt('MP0_STRENGTH', 100, true)
+StatSetInt('MP0_LUNG_CAPACITY', 100, true)
+StatSetInt('MP0_WHEELIE_ABILITY', 100, true)
+StatSetInt('MP0_FLYING_ABILITY', 100, true)
+StatSetInt('MP0_SHOOTING_ABILITY', 100, true)
+StatSetInt('MP0_STEALTH_ABILITY', 100, true)
 
 local function func_192(sba) -- from decompiled R* scripts
 	if sba == 1 then
@@ -72,7 +95,10 @@ local isFirstSpawn = true
 local gameHost = false
 local isGameStarted = false
 local playerInLobby = false
-local npcPlayer = 233333333
+local npcPlayer = "客户端传来的参数值"
+
+ClientStates = {INIT = "INIT", READY="READY", COUNTDOWN="COUNTDOWN", ONGOING="ONGOING", FINISHED="FINISHED", POST="POST"}
+client_state = ClientStates.INIT
 
 AddEventHandler("playerSpawned", function(spawn)
 
@@ -100,10 +126,10 @@ AddEventHandler("playerSpawned", function(spawn)
 
     playerInLobby = true
 
-    if isFirstSpawn then
-        TriggerServerEvent('fuzzys:playerSpawned')
-        isFirstSpawn = false
-    end
+    --if isFirstSpawn then
+        --TriggerServerEvent('fuzzys:playerSpawned')
+        --isFirstSpawn = false
+    --end
 end)
 
 _menuPool = NativeUI.CreatePool()
@@ -143,54 +169,92 @@ function MapEditor(menu)
     menu:AddItem(propList)
     menu.OnListChange = function(sender, item, index)
         if item == propList then
-            selectModelHash = item:IndexToItem(index)
-            ShowNotification("切换模型 ~b~" .. selectModelHash .. "~w~...")
+            selectModel = item:IndexToItem(index)
+            ShowNotification("切换模型 ~b~" .. selectModel .. "~w~...")
         end
     end
 end]]--
 
 function MapEditor(menu)
     local submenu = _menuPool:AddSubMenu(menu, "地图编辑器", "", 1300, 80)
-    local propHash = {-1088903588,3287988974,3906373800,4228722453,3124504613,993442923,4067691788,1431235846,1832852758,346059280,620582592,85342060,483832101,930976262,1677872320,708828172,950795200,3034310442,2419563138,3430162838,2992496910,1518201148,117169896,2815009181}
-    local propColor = {0,1,2,3,4,5,6,7,8,9}
-    local mapname = "stunt-chiliad"
-    local propList = NativeUI.CreateListItem("选择道具哈希", propHash, 1)
+    local propTb = {
+        "stt_prop_ramp_jump_l",
+        "stt_prop_ramp_jump_m",
+        "stt_prop_ramp_jump_s",
+        "stt_prop_ramp_jump_xl",
+        "stt_prop_ramp_jump_xs",
+        "stt_prop_ramp_jump_xxl",
+        "stt_prop_ramp_adj_flip_m",
+        "stt_prop_ramp_adj_flip_mb",
+        "stt_prop_ramp_adj_flip_s",
+        "stt_prop_ramp_adj_flip_sb",
+        "stt_prop_ramp_adj_hloop",
+        "stt_prop_stunt_jump_l",
+        "stt_prop_stunt_jump_lb",
+        "stt_prop_stunt_jump_m",
+        "stt_prop_stunt_jump_mb",
+        "stt_prop_stunt_jump_s",
+        "stt_prop_stunt_jump_sb",
+        "stt_prop_track_speedup",
+        "stt_prop_track_speedup_t1",
+        "stt_prop_track_speedup_t2",
+        "stt_prop_stunt_tube_speed",
+        "stt_prop_stunt_tube_speedb",
+        "stt_prop_track_slowdown",
+        "stt_prop_track_slowdown_t1",
+        "stt_prop_track_slowdown_t2",
+        "sr_mp_spec_races_blimp_sign",
+        "test_prop_gravestones_09a",
+        "test_prop_gravestones_08a",
+        "test_prop_gravestones_07a",
+        "test_prop_gravestones_05a",
+        "test_prop_gravestones_04a",
+        "sm_prop_smug_cont_01a",
+    }
+    local propColor = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}
+    local name = {"stunt-chiliad","race","hahaha","简单绕圈比赛","stunt-rally","senora-freeway"}
+    local propList = NativeUI.CreateListItem("选择道具", propTb, 1)
     local colorList = NativeUI.CreateListItem("选择道具颜色", propColor, 1)
+    local loadRaceMap = NativeUI.CreateListItem("加载比赛", name, 1, "加载比赛地图和检查点")
     local loadProp = NativeUI.CreateItem("加载道具", "加载玩家放置的道具")
-    local loadMap = NativeUI.CreateItem("加载比赛", "加载比赛地图和检查点")
     local unloadMap = NativeUI.CreateItem("卸载所有道具", "删除游戏中所有道具的模型")
+    local startRace = NativeUI.CreateItem("开始比赛", "测试中...")
     submenu:AddItem(propList)
     submenu:AddItem(colorList)
+    submenu:AddItem(loadRaceMap)
     submenu:AddItem(loadProp)
-    submenu:AddItem(loadMap)
     submenu:AddItem(unloadMap)
+    submenu:AddItem(startRace)
     
     submenu.OnListChange = function(sender, item, index)
         if item == propList then
-            selectModelHash = item:IndexToItem(index)
-            ShowNotification("切换模型 ~b~" .. selectModelHash .. "~w~...")
-        end
-        if item == colorList then
+            selectModel = item:IndexToItem(index)
+            ShowNotification("切换模型 ~b~" .. selectModel .. "~w~。")
+        elseif item == colorList then
             selectColorId = item:IndexToItem(index)
-            ShowNotification("切换颜色 ~b~" .. selectColorId .. "~w~...")
+            ShowNotification("切换颜色 ~b~" .. selectColorId .. "~w~。")
+        elseif item == loadRaceMap then
+            racename = item:IndexToItem(index)
+            TriggerServerEvent('fuzzys:loadmap', racename)
+            gameHost = true
+            ShowNotification("加载比赛 ~b~" .. racename .. "~w~。")
         end
     end
     submenu.OnItemSelect = function(sender, item, index)
         if item == loadProp then
-            TriggerServerEvent('fuzzys:loadmodel', npcPlayer)
-            gameHost = false
-        elseif item == loadMap then
-            TriggerServerEvent('fuzzys:loadmap', mapname)
-            gameHost = true
+            TriggerServerEvent('fuzzys:loadmodel', npcPlayer)          
         elseif item == unloadMap then
             unloadJsonMap()
+            gameHost = false
+        elseif item == startRace then
+            startFivemRace()
         end
     end
 end
 
 ShowPiFuMenu(mainMenu)
---ShowAllPlayer(mainMenu)
 MapEditor(mainMenu)
+--ShowAllPlayer(mainMenu)
 
 _menuPool:RefreshIndex()
 _menuPool:MouseControlsEnabled(false)
@@ -212,8 +276,8 @@ Citizen.CreateThread( function()
         local pos = GetEntityCoords(GetPlayerPed(-1))
         local angle = GetEntityHeading(GetPlayerPed(-1))
         if IsControlJustPressed(0, 38) then
-            local handle = CreateMap(pos, angle, selectModelHash, selectColorId)
-            TriggerServerEvent('map:sync', pos, angle, handle[1], handle[2], selectModelHash, selectColorId)
+            local handle = CreateMap(pos, angle, joaat(selectModel), selectColorId)
+            TriggerServerEvent('map:sync', pos, angle, handle[1], handle[2], joaat(selectModel), selectColorId)
         end
         
         -- if gameHost == true then
@@ -256,8 +320,6 @@ AddEventHandler('map:loadmap', function(jsonTable)
 end)
 
 function CreateMap(pos, angle, model, color)
-    --local model = "stt_prop_ramp_jump_xs"
-    --local model = joaat(model)
     local callback = {}
     while not HasModelLoaded(model) do
         RequestModel(model)
@@ -283,7 +345,7 @@ function CreateMap(pos, angle, model, color)
 end
 
 function loadJsonMap(jsonTable)
-    --unloadJsonMap()
+    unloadJsonMap()
     Citizen.CreateThread(function()
         local prop = jsonTable.mission.prop
         local dprop = jsonTable.mission.dprop
@@ -348,10 +410,263 @@ function loadJsonMap(jsonTable)
             Citizen.Trace("Fuzzys: Load ".. dprop.no .." Dynamic Props Success \n")
         end
         if jsonTable.mission.race then
-            local startPos = jsonTable.mission.race.grid
-            SetEntityCoords(GetPlayerPed(-1), startPos.x, startPos.y, startPos.z, true, false, false, true)
+            race = jsonTable.mission.race
+            next_cp_id = 1
+            current_lap = 1
+            local ped = GetPlayerPed(-1)
+            SetEntityCoords(ped, race.grid.x, race.grid.y, race.grid.z, 1, 0, 0, 1)
+            SetEntityHeading(ped, race.head, 1, 0, 0, 1)
+            local vehicle = CreateVehicle("deveste", race.grid.x, race.grid.y, race.grid.z, race.head, true, false)
+            SetVehRadioStation(vehicle, "OFF")
+            SetVehicleOnGroundProperly(vehicle)
+            SetPedIntoVehicle(ped, vehicle, -1)
         end
     end)
+end
+
+function startFivemRace()
+    if race then        
+        local position_in_grid = 1 --起始顺序位置
+        local ped = GetPlayerPed(-1)
+        local vehicle = GetVehiclePedIsIn(ped)
+        --local startPos = race.grid
+        local vehpos = GetOffsetFromEntityInWorldCoords(PlayerPedId(), (-1*(-1)^position_in_grid)*3.0, -4.2 - position_in_grid*6.0, 0.0)
+        
+        ClearAreaOfVehicles(race.grid.x, race.grid.y, race.grid.z, 3000.0, 0, 0, 0, 0, false)
+        ClearAreaOfVehicles(race.grid.x, race.grid.y, race.grid.z, 3000.0, 0, 0, 1, 0, false)
+        ClearAreaOfVehicles(race.grid.x, race.grid.y, race.grid.z, 3000.0, 0, 0, 0, 1, false)
+        
+        SetEntityCoords(vehicle, vehpos.x, vehpos.y, vehpos.z, 1, 0, 0, 1)
+        SetEntityHeading(vehicle, race.head, 1, 0, 0, 1)
+        -- while not HasCollisionLoadedAroundEntity(vehicle) do
+            -- Wait(0)
+        -- end
+        
+        --SetVehicleNumberPlateText(vehicle, "racemode")
+        --SetPedIntoVehicle(PlayerPedId(), vehicle, -1)
+        --SetVehRadioStation(vehicle, "OFF")
+        SetPedCanBeKnockedOffVehicle(ped, true)
+        SetVehicleDoorsLockedForAllPlayers(vehicle, true)
+        SetVehicleDoorsLocked(vehicle, 4)
+        SetEntityInvincible(vehicle, true)
+        --SetVehicleOnGroundProperly(vehicle)
+        --FreezeEntityPosition(vehicle, true)
+        
+        client_state = ClientStates.ONGOING
+        
+        local first_cp = race.chl[1]
+        local next_cp = race.chl[2]
+        cp_handle = CreateCheckpoint(5, first_cp.x, first_cp.y, first_cp.z+5.0, next_cp.x, next_cp.y, next_cp.z, cp_radius, cp_r, cp_g, cp_b, 180, 0)
+        SetCheckpointCylinderHeight(cp_handle, cp_height, cp_height, 100.0);
+        SetCheckpointIconRgba(cp_handle, cpi_r, cpi_g, cpi_b, cpi_a)
+        cp_blip_handle = AddBlipForCoord(first_cp.x, first_cp.y, first_cp.z)
+        SetBlipSprite(cp_blip_handle, 1)
+        SetBlipColour(cp_blip_handle, 66)
+        next_cp_blip_handle = AddBlipForCoord(next_cp.x, next_cp.y, next_cp.z)
+        SetBlipSprite(next_cp_blip_handle, 1)
+        SetBlipColour(next_cp_blip_handle, 66)
+        SetBlipScale(next_cp_blip_handle, 0.5)
+        
+        StartRaceOnTick()
+    end
+end
+
+function StartRaceOnTick()
+Citizen.CreateThread(function()
+	local respawnKey_start = nil
+	--local res = {};
+	--res.x, res.y = GetScreenResolution()
+    local laps = race.lap
+    if laps < 1 then
+        laps = 1 -- 1 lap means point to point
+    end
+	local textscale = 0.5
+	local fontid = 1
+	local respawn_hold_time = 1500
+    local race_vehicle = GetVehiclePedIsIn(GetPlayerPed(-1))
+	while client_state == ClientStates.ONGOING do
+	
+		-- BEGIN RESPAWNING KEY
+		if IsControlJustPressed(0, 75) then
+			respawnKey_start = GetNetworkTime()
+		end
+		if IsControlJustReleased(0, 75) then
+			respawnKey_start = nil
+		end
+		if respawnKey_start then
+			elapsed = GetNetworkTime() - respawnKey_start
+			DrawRect(0.5, 0.5, elapsed/respawn_hold_time, 0.05, 0, 0, 255, 100)
+			BeginTextCommandWidth("STRING")
+			AddTextComponentSubstringPlayerName("按住 重生")
+			SetTextFont(fontid)
+			SetTextScale(textscale, textscale)
+			local width = EndTextCommandGetWidth(1)
+			local height = GetTextScaleHeight(textscale, fontid)
+			BeginTextCommandDisplayText("STRING")
+			AddTextComponentSubstringPlayerName("按住 重生")
+			SetTextFont(fontid)
+			--SetTextProportional(1)
+			SetTextScale(textscale, textscale)
+			SetTextColour(255, 255, 255, 255)
+			EndTextCommandDisplayText(0.5 - (width/2.0), 0.5 - (height/2.0))
+			if elapsed >= respawn_hold_time then
+				local p, h
+				if next_cp_id == 1 then -- still have to pass first CP
+					p = race.grid
+					h = race.head
+				else
+					p = race.chl[next_cp_id-1]
+					h = race.chh[next_cp_id-1]
+				end
+				SetEntityCoords(race_vehicle, p.x, p.y, p.z, 1, 0, 0, 1)
+				SetEntityHeading(race_vehicle, h, 1, 0, 0, 1)
+				SetVehicleFixed(race_vehicle)
+				SetVehicleDeformationFixed(race_vehicle)
+				SetVehicleDirtLevel(race_vehicle, 0)
+				SetVehicleEngineHealth(race_vehicle, 1000.0)
+				SetVehiclePetrolTankHealth(race_vehicle, 1000.0)
+				SetVehicleUndriveable(race_vehicle, false)
+				SetVehicleEngineCanDegrade(race_vehicle, false)
+				SetVehicleEngineOn(race_vehicle, true)
+				SetPedIntoVehicle(GetPlayerPed(-1), race_vehicle, -1)
+				SetGameplayCamRelativeHeading(0.0)
+				SetVehicleForwardSpeed(race_vehicle, 15.0)
+				if IsThisModelAHeli(GetEntityModel(race_vehicle)) then -- if helicopter race, set blades to full speed etc
+					SetHeliBladesFullSpeed(race_vehicle)
+				end
+				--StartScreenEffect("SwitchShortNeutralIn", 0, 0);
+				PlaySoundFrontend(-1, "Hit", "RESPAWN_ONLINE_SOUNDSET", 1);
+				respawnKey_start = nil
+			end
+		end
+		-- END RESPAWNING KEY
+		if IsPlayerWithinCPTrigger(race.chl[next_cp_id]) then
+			--TriggerServerEvent("racing:passedCP", next_cp_id)
+			FadeoutAndDeleteCheckpoint(cp_handle)
+            
+            if current_lap < laps and next_cp_id == race.chp then -- finished a lap 圈数问题 提前添加点。。。
+                next_cp_id = 1
+                current_lap = current_lap + 1
+                local previous_cp = race.chl[next_cp_id]
+                local next_cp = race.chl[next_cp_id+1]
+                local chtype = 5
+                local z_offset = 5.0
+                cp_handle = CreateCheckpoint(chtype, previous_cp.x, previous_cp.y, previous_cp.z + z_offset, next_cp.x, next_cp.y, next_cp.z, radius, cp_r, cp_g, cp_b, 180, 0)
+                SetCheckpointCylinderHeight(cp_handle, cp_height, cp_height, 100.0);
+                SetCheckpointIconRgba(cp_handle, cpi_r, cpi_g, cpi_b, cpi_a)
+                
+                -- cp_blip_handle = AddBlipForCoord(race.chl[next_cp_id].x, race.chl[next_cp_id].y, race.chl[next_cp_id].z)
+                -- SetBlipSprite(cp_blip_handle, 1)
+                -- SetBlipColour(cp_blip_handle, 66)		
+                -- SetBlipScale(cp_blip_handle, 0.5)
+                -- PlaySoundFrontend(-1, "Checkpoint_Lap", "DLC_Stunt_Race_Frontend_Sounds", 1)
+                -- RemoveBlip(cp_blip_handle)
+                ShowNotification("第~b~" .. current_lap .. "~w~圈。")
+            else
+                if current_lap == laps and next_cp_id == race.chp then -- PASSED THE FINISH
+                    PlaySoundFrontend(-1, "Checkpoint_Finish", "DLC_Stunt_Race_Frontend_Sounds", 0)
+                    RemoveBlip(cp_blip_handle)                
+                    break
+                else
+                    PlaySoundFrontend(-1, "Checkpoint", "DLC_Stunt_Race_Frontend_Sounds", 0)
+                    ShowNotification("第~b~" .. next_cp_id .. "~w~检查点。")
+                    next_cp_id = next_cp_id + 1
+                    RemoveBlip(cp_blip_handle)
+                    cp_blip_handle = next_cp_blip_handle
+                    SetBlipScale(cp_blip_handle, 1.0)
+                    if next_cp_id == race.chp then -- creating the finish marker
+                        local cp = race.chl[next_cp_id]
+                        cp_handle = CreateCheckpoint(4, cp.x, cp.y, cp.z, cp.x, cp.y, cp.z, cp_radius, cp_r, cp_g, cp_b, 180, 0)
+                        SetCheckpointIconRgba(cp_handle, cpi_r, cpi_g, cpi_b, cpi_a)
+                    else
+                        local previous_cp = race.chl[next_cp_id]
+                        local next_cp = race.chl[next_cp_id+1]
+                        local chtype = 5
+                        local z_offset = 5.0
+                        local radius = cp_radius
+                        if race.rndchk and race.rndchk[next_cp_id] then
+                            chtype = 10
+                            z_offset = 10.0
+                            radius = 20.0
+                        elseif race.cpbs1 and (race.cpbs1[next_cp_id] > 1) then
+                            chtype = 10
+                            z_offset = 10.0
+                            radius = 20.0
+                        end
+                        chtype = chtype + GetNumberOfArrowsToDraw(next_cp_id)
+                        cp_handle = CreateCheckpoint(chtype, previous_cp.x, previous_cp.y, previous_cp.z + z_offset, next_cp.x, next_cp.y, next_cp.z, radius, cp_r, cp_g, cp_b, 180, 0)
+                        SetCheckpointCylinderHeight(cp_handle, cp_height, cp_height, 100.0);
+                        SetCheckpointIconRgba(cp_handle, cpi_r, cpi_g, cpi_b, cpi_a)
+                        
+                        if current_lap == laps and next_cp_id+1 == race.chp  then -- creating the finish blip
+                            next_cp_blip_handle = AddBlipForCoord(race.chl[next_cp_id+1].x, race.chl[next_cp_id+1].y, race.chl[next_cp_id+1].z)
+                            SetBlipSprite(next_cp_blip_handle, 38)
+                        else
+                            next_cp_blip_handle = AddBlipForCoord(race.chl[next_cp_id+1].x, race.chl[next_cp_id+1].y, race.chl[next_cp_id+1].z)
+                            SetBlipSprite(next_cp_blip_handle, 1)
+                            SetBlipColour(next_cp_blip_handle, 66)		
+                            SetBlipScale(next_cp_blip_handle, 0.5)							
+                        end
+                    end
+                end
+            end
+		end
+		-- if got_boost and IsControlJustPressed(0, 51) then
+			-- DoBoost()
+		-- elseif got_rockets and IsControlJustPressed(0, 51) then
+			-- DoRockets()
+		-- end
+		Citizen.Wait(0)--删了会死循环 卡死游戏...
+	end
+end)
+end
+
+function IsPlayerWithinCPTrigger(cp)
+	local pos = GetEntityCoords(GetPlayerPed(-1))
+	local cp_center = vector3(cp.x, cp.y, cp.z)
+	local trigger_radius = cp_radius + 2.0
+	if race.rndchk and race.rndchk[next_cp_id] then
+		cp_center = cp_center + vector3(0.0,0.0,10.0)
+		trigger_radius = 20.0
+	elseif race.cpbs1 and (race.cpbs1[next_cp_id] > 1) then
+        cp_center = cp_center + vector3(0.0,0.0,10.0)
+		trigger_radius = 20.0
+    end
+	local distanceToCheckpoint = Vdist(pos.x, pos.y, pos.z, cp_center.x, cp_center.y, cp_center.z)
+	return (distanceToCheckpoint < trigger_radius)
+end
+
+function GetNumberOfArrowsToDraw(cp)
+	thisCP = vector2(race.chl[cp].x, race.chl[cp].y)
+	previousCP = vector2(race.chl[cp-1].x, race.chl[cp-1].y)
+	nextCP = vector2(race.chl[cp+1].x, race.chl[cp+1].y)
+	prevToNow = thisCP - previousCP
+	nowToNext = nextCP - thisCP
+	angle = GetAngleBetween_2dVectors(prevToNow.x, prevToNow.y, nowToNext.x, nowToNext.y)
+	angle = Absf(angle)
+	if angle < 80.0 then
+		return 0
+	elseif angle < 140.0 then
+		return 1
+	elseif angle < 180.0 then
+		return 2
+	else
+		return 0
+	end
+end
+
+function FadeoutAndDeleteCheckpoint(cp)
+Citizen.CreateThread(function()
+	SetCheckpointRgba(cp, 255, 255, 255, 0)
+	local fadeout_duration = 500
+	local start_fadeout = GetNetworkTime()
+	while GetNetworkTime() - start_fadeout < 500 do
+		local alpha = Round(((500 - (GetNetworkTime() - start_fadeout))/500)*255)
+		SetCheckpointIconRgba(cp, 255, 255, 255, alpha)
+		Citizen.Wait(0)
+	end
+	DeleteCheckpoint(cp)
+end)
 end
 
 function unloadJsonMap()
@@ -362,8 +677,8 @@ function unloadJsonMap()
     end
     Citizen.Trace("Fuzzys: unload ".. num .." props success \n")
     props = {}
+    race = {}
 end
-
 
 --[[Citizen.CreateThread(function()
     local menuOpen = false
