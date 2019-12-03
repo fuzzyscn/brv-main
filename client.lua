@@ -1,11 +1,12 @@
 local props = {}
 local race = {}
+local jsonVehicle = {}
 local selectModel = "stt_prop_track_speedup"
 local selectColorId = 3
 local racename = "race"
 -- CONFIGURATION
-local cp_radius = 9.0
-local cp_height = 8.5
+local cp_radius = 10.0
+local cp_height = 9.5
 local cp_colour = 13 -- Checkpoint colour https://pastebin.com/d9aHPbXN
 local cp_icon_colour = 134 -- Checkpoint icon colour
 local cp_r, cp_g, cp_b, cp_a = GetHudColour(cp_colour)
@@ -98,7 +99,6 @@ local playerInLobby = false
 local npcPlayer = "客户端传来的参数值"
 
 ClientStates = {INIT = "INIT", READY="READY", COUNTDOWN="COUNTDOWN", ONGOING="ONGOING", FINISHED="FINISHED", POST="POST"}
-client_state = ClientStates.INIT
 
 AddEventHandler("playerSpawned", function(spawn)
 
@@ -212,19 +212,19 @@ function MapEditor(menu)
         "sm_prop_smug_cont_01a",
     }
     local propColor = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}
-    local name = {"stunt-chiliad","race","hahaha","简单绕圈比赛","stunt-rally","senora-freeway"}
+    local name = {"stunt-chiliad","简单绕圈比赛","jichang","race","hahaha","stunt-rally","senora-freeway"}
     local propList = NativeUI.CreateListItem("选择道具", propTb, 1)
     local colorList = NativeUI.CreateListItem("选择道具颜色", propColor, 1)
     local loadRaceMap = NativeUI.CreateListItem("加载比赛", name, 1, "加载比赛地图和检查点")
     local loadProp = NativeUI.CreateItem("加载道具", "加载玩家放置的道具")
-    local unloadMap = NativeUI.CreateItem("卸载所有道具", "删除游戏中所有道具的模型")
     local startRace = NativeUI.CreateItem("开始比赛", "测试中...")
+    local unloadMap = NativeUI.CreateItem("卸载地图和比赛", "删除游戏中所有道具的模型和比赛地图检查点")
     submenu:AddItem(propList)
     submenu:AddItem(colorList)
     submenu:AddItem(loadRaceMap)
     submenu:AddItem(loadProp)
-    submenu:AddItem(unloadMap)
     submenu:AddItem(startRace)
+    submenu:AddItem(unloadMap)
     
     submenu.OnListChange = function(sender, item, index)
         if item == propList then
@@ -236,18 +236,19 @@ function MapEditor(menu)
         elseif item == loadRaceMap then
             racename = item:IndexToItem(index)
             TriggerServerEvent('fuzzys:loadmap', racename)
-            gameHost = true
             ShowNotification("加载比赛 ~b~" .. racename .. "~w~。")
         end
     end
     submenu.OnItemSelect = function(sender, item, index)
         if item == loadProp then
-            TriggerServerEvent('fuzzys:loadmodel', npcPlayer)          
+            TriggerServerEvent('fuzzys:loadmodel', npcPlayer)
+        elseif item == startRace then
+            startFivemRace()
+            TriggerServerEvent('fuzzys:startRace')
+            gameHost = false
         elseif item == unloadMap then
             unloadJsonMap()
             gameHost = false
-        elseif item == startRace then
-            startFivemRace()
         end
     end
 end
@@ -262,7 +263,7 @@ _menuPool:ControlDisablingEnabled(false)
 
 Citizen.CreateThread(function()
     while true do
-    Citizen.Wait(0)
+    Citizen.Wait(5)
         _menuPool:ProcessMenus()
         if IsControlJustPressed(0, 244) then
             mainMenu:Visible(not mainMenu:Visible())
@@ -272,20 +273,13 @@ end)
 
 Citizen.CreateThread( function()
     while true do
-    Citizen.Wait(1)
+    Citizen.Wait(5)
         local pos = GetEntityCoords(GetPlayerPed(-1))
         local angle = GetEntityHeading(GetPlayerPed(-1))
         if IsControlJustPressed(0, 38) then
             local handle = CreateMap(pos, angle, joaat(selectModel), selectColorId)
             TriggerServerEvent('map:sync', pos, angle, handle[1], handle[2], joaat(selectModel), selectColorId)
         end
-        
-        -- if gameHost == true then
-            -- TogglePvP(false)
-            -- local Players = GetPlayers()
-            -- RenderPlayerList(Players)
-        -- end
-        
         if isFirstSpawn then
             AddTextEntry('FirstSpawnMessageHeader', '~r~FiveM创造模式')
             AddTextEntry('FirstSpawnMessageLine1', '前往圈内选择人物或举办比赛')
@@ -411,38 +405,125 @@ function loadJsonMap(jsonTable)
         end
         if jsonTable.mission.race then
             race = jsonTable.mission.race
-            next_cp_id = 1
-            current_lap = 1
-            local ped = GetPlayerPed(-1)
-            SetEntityCoords(ped, race.grid.x, race.grid.y, race.grid.z, 1, 0, 0, 1)
+            jsonVehicle = jsonTable.mission.veh
+            local gen = jsonTable.mission.gen            
+            local ped = GetPlayerPed(-1)            
+            SetEntityCoords(ped, gen.start.x, gen.start.y, gen.start.z, 1, 0, 0, 1)
             SetEntityHeading(ped, race.head, 1, 0, 0, 1)
-            local vehicle = CreateVehicle("deveste", race.grid.x, race.grid.y, race.grid.z, race.head, true, false)
+            TriggerServerEvent('fuzzys:getplayerid', "比赛名字：^6" .. gen.nm .. " ^7描述：" .. gen.dec[1])
+            
+            -- local vname = tonumber(gen.ivm)
+            -- if vname == 0 then
+                -- vname = joaat("xa21")
+            -- end
+            local vehicle = CreateVehicle("xa21", race.grid.x, race.grid.y, race.grid.z, race.head, true, false)
             SetVehRadioStation(vehicle, "OFF")
             SetVehicleOnGroundProperly(vehicle)
+            Wait(2000)
             SetPedIntoVehicle(ped, vehicle, -1)
         end
     end)
 end
 
+countdown = false
+RegisterNetEvent('raceCount')
+AddEventHandler('raceCount', function(a)
+	num = a
+	if a > 0 then
+		PlaySoundFrontend(-1, "CHECKPOINT_AHEAD","HUD_MINI_GAME_SOUNDSET", 1)
+	elseif a == 0 then
+		PlaySoundFrontend(-1, "TENNIS_POINT_WON","HUD_AWARDS", 1)
+	end
+end)
+Citizen.CreateThread(function()
+    while true do
+        Citizen.Wait(0)
+        if countdown then
+            scaleform = Initialize("COUNTDOWN")
+            DrawScaleformMovieFullscreen(scaleform, 255, 255, 255, 255, 0)
+        end
+        if num == 3 then
+			countdown = 3
+			r = 173
+			g = 6
+			b = 6
+		elseif num == 2 then
+			countdown = 2
+			r = 244
+			g = 215
+			b = 66
+		elseif num == 1 then
+			countdown = 1
+			r = 244
+			g = 215
+			b = 66
+		elseif num == 0 then
+			countdown = 0
+			r = 80
+			g = 206
+			b = 49
+			countdown = "GO!"
+		elseif num == -1 then
+			countdown = false
+		end
+    end
+end)
+Citizen.CreateThread(function()
+	while true do
+    Citizen.Wait(0)
+        if gameHost then
+            scaleform = InitializeRaceScaleform("mp_big_message_freemode")
+            DrawScaleformMovieFullscreen(scaleform, 255, 255, 255, 255, 0)
+            --TogglePvP(false)
+            local JoinedPlayers = GetPlayers()
+            RenderPlayerList(JoinedPlayers)            
+        end
+	end
+end)
+function InitializeRaceScaleform(scaleform)
+    local scaleform = RequestScaleformMovie(scaleform)
+    while not HasScaleformMovieLoaded(scaleform) do
+        Citizen.Wait(0)
+    end
+    PushScaleformMovieFunction(scaleform, "SHOW_SHARD_WASTED_MP_MESSAGE")
+
+	PushScaleformMovieFunctionParameterString("~b~".."比赛结束")
+    PushScaleformMovieFunctionParameterString("")
+    PopScaleformMovieFunctionVoid()
+    return scaleform
+end
+function Initialize(scaleform)
+    local scaleform = RequestScaleformMovie(scaleform)
+    while not HasScaleformMovieLoaded(scaleform) do
+        Citizen.Wait(0)
+    end
+    PushScaleformMovieFunction(scaleform, "FADE_MP")
+    PushScaleformMovieFunctionParameterString(countdown)
+	PushScaleformMovieFunctionParameterInt(r)
+	PushScaleformMovieFunctionParameterInt(g)
+	PushScaleformMovieFunctionParameterInt(b)
+    PopScaleformMovieFunctionVoid()
+    return scaleform
+end
+
 function startFivemRace()
     if race then        
-        local position_in_grid = 1 --起始顺序位置
+        local position = 8 --起始顺序位置
         local ped = GetPlayerPed(-1)
         local vehicle = GetVehiclePedIsIn(ped)
-        --local startPos = race.grid
-        local vehpos = GetOffsetFromEntityInWorldCoords(PlayerPedId(), (-1*(-1)^position_in_grid)*3.0, -4.2 - position_in_grid*6.0, 0.0)
+        --local vehpos = GetOffsetFromEntityInWorldCoords(PlayerPedId(), (-1*(-1)^position)*3.0, -4.2 - position*6.0, 0.0)
         
         ClearAreaOfVehicles(race.grid.x, race.grid.y, race.grid.z, 3000.0, 0, 0, 0, 0, false)
         ClearAreaOfVehicles(race.grid.x, race.grid.y, race.grid.z, 3000.0, 0, 0, 1, 0, false)
         ClearAreaOfVehicles(race.grid.x, race.grid.y, race.grid.z, 3000.0, 0, 0, 0, 1, false)
         
-        SetEntityCoords(vehicle, vehpos.x, vehpos.y, vehpos.z, 1, 0, 0, 1)
-        SetEntityHeading(vehicle, race.head, 1, 0, 0, 1)
+        SetEntityCoords(vehicle, jsonVehicle.loc[position].x, jsonVehicle.loc[position].y, jsonVehicle.loc[position].z, 1, 0, 0, 1)
+        SetEntityHeading(vehicle, jsonVehicle.head[position], 1, 0, 0, 1)
         -- while not HasCollisionLoadedAroundEntity(vehicle) do
             -- Wait(0)
         -- end
         
-        --SetVehicleNumberPlateText(vehicle, "racemode")
+        SetVehicleNumberPlateText(vehicle, "racemode")
         --SetPedIntoVehicle(PlayerPedId(), vehicle, -1)
         --SetVehRadioStation(vehicle, "OFF")
         SetPedCanBeKnockedOffVehicle(ped, true)
@@ -459,9 +540,11 @@ function startFivemRace()
         cp_handle = CreateCheckpoint(5, first_cp.x, first_cp.y, first_cp.z+5.0, next_cp.x, next_cp.y, next_cp.z, cp_radius, cp_r, cp_g, cp_b, 180, 0)
         SetCheckpointCylinderHeight(cp_handle, cp_height, cp_height, 100.0);
         SetCheckpointIconRgba(cp_handle, cpi_r, cpi_g, cpi_b, cpi_a)
+        
         cp_blip_handle = AddBlipForCoord(first_cp.x, first_cp.y, first_cp.z)
         SetBlipSprite(cp_blip_handle, 1)
         SetBlipColour(cp_blip_handle, 66)
+        
         next_cp_blip_handle = AddBlipForCoord(next_cp.x, next_cp.y, next_cp.z)
         SetBlipSprite(next_cp_blip_handle, 1)
         SetBlipColour(next_cp_blip_handle, 66)
@@ -473,107 +556,155 @@ end
 
 function StartRaceOnTick()
 Citizen.CreateThread(function()
-	local respawnKey_start = nil
-	--local res = {};
-	--res.x, res.y = GetScreenResolution()
+    next_cp_id = 1
+    current_lap = 1
+    
+    local respawnKey_start = nil
     local laps = race.lap
     if laps < 1 then
         laps = 1 -- 1 lap means point to point
     end
-	local textscale = 0.5
-	local fontid = 1
-	local respawn_hold_time = 1500
+    local textscale = 0.5
+    local fontid = 1
+    local respawn_hold_time = 1500
     local race_vehicle = GetVehiclePedIsIn(GetPlayerPed(-1))
-	while client_state == ClientStates.ONGOING do
-	
-		-- BEGIN RESPAWNING KEY
-		if IsControlJustPressed(0, 75) then
-			respawnKey_start = GetNetworkTime()
-		end
-		if IsControlJustReleased(0, 75) then
-			respawnKey_start = nil
-		end
-		if respawnKey_start then
-			elapsed = GetNetworkTime() - respawnKey_start
-			DrawRect(0.5, 0.5, elapsed/respawn_hold_time, 0.05, 0, 0, 255, 100)
-			BeginTextCommandWidth("STRING")
-			AddTextComponentSubstringPlayerName("按住 重生")
-			SetTextFont(fontid)
-			SetTextScale(textscale, textscale)
-			local width = EndTextCommandGetWidth(1)
-			local height = GetTextScaleHeight(textscale, fontid)
-			BeginTextCommandDisplayText("STRING")
-			AddTextComponentSubstringPlayerName("按住 重生")
-			SetTextFont(fontid)
-			--SetTextProportional(1)
-			SetTextScale(textscale, textscale)
-			SetTextColour(255, 255, 255, 255)
-			EndTextCommandDisplayText(0.5 - (width/2.0), 0.5 - (height/2.0))
-			if elapsed >= respawn_hold_time then
-				local p, h
-				if next_cp_id == 1 then -- still have to pass first CP
-					p = race.grid
-					h = race.head
-				else
-					p = race.chl[next_cp_id-1]
-					h = race.chh[next_cp_id-1]
-				end
-				SetEntityCoords(race_vehicle, p.x, p.y, p.z, 1, 0, 0, 1)
-				SetEntityHeading(race_vehicle, h, 1, 0, 0, 1)
-				SetVehicleFixed(race_vehicle)
-				SetVehicleDeformationFixed(race_vehicle)
-				SetVehicleDirtLevel(race_vehicle, 0)
-				SetVehicleEngineHealth(race_vehicle, 1000.0)
-				SetVehiclePetrolTankHealth(race_vehicle, 1000.0)
-				SetVehicleUndriveable(race_vehicle, false)
-				SetVehicleEngineCanDegrade(race_vehicle, false)
-				SetVehicleEngineOn(race_vehicle, true)
-				SetPedIntoVehicle(GetPlayerPed(-1), race_vehicle, -1)
-				SetGameplayCamRelativeHeading(0.0)
-				SetVehicleForwardSpeed(race_vehicle, 15.0)
-				if IsThisModelAHeli(GetEntityModel(race_vehicle)) then -- if helicopter race, set blades to full speed etc
-					SetHeliBladesFullSpeed(race_vehicle)
-				end
-				--StartScreenEffect("SwitchShortNeutralIn", 0, 0);
-				PlaySoundFrontend(-1, "Hit", "RESPAWN_ONLINE_SOUNDSET", 1);
-				respawnKey_start = nil
-			end
-		end
-		-- END RESPAWNING KEY
-		if IsPlayerWithinCPTrigger(race.chl[next_cp_id]) then
-			--TriggerServerEvent("racing:passedCP", next_cp_id)
-			FadeoutAndDeleteCheckpoint(cp_handle)
-            
-            if current_lap < laps and next_cp_id == race.chp then -- finished a lap 圈数问题 提前添加点。。。
-                next_cp_id = 1
-                current_lap = current_lap + 1
-                local previous_cp = race.chl[next_cp_id]
-                local next_cp = race.chl[next_cp_id+1]
-                local chtype = 5
-                local z_offset = 5.0
-                cp_handle = CreateCheckpoint(chtype, previous_cp.x, previous_cp.y, previous_cp.z + z_offset, next_cp.x, next_cp.y, next_cp.z, radius, cp_r, cp_g, cp_b, 180, 0)
-                SetCheckpointCylinderHeight(cp_handle, cp_height, cp_height, 100.0);
-                SetCheckpointIconRgba(cp_handle, cpi_r, cpi_g, cpi_b, cpi_a)
-                
-                -- cp_blip_handle = AddBlipForCoord(race.chl[next_cp_id].x, race.chl[next_cp_id].y, race.chl[next_cp_id].z)
-                -- SetBlipSprite(cp_blip_handle, 1)
-                -- SetBlipColour(cp_blip_handle, 66)		
-                -- SetBlipScale(cp_blip_handle, 0.5)
-                -- PlaySoundFrontend(-1, "Checkpoint_Lap", "DLC_Stunt_Race_Frontend_Sounds", 1)
-                -- RemoveBlip(cp_blip_handle)
-                ShowNotification("第~b~" .. current_lap .. "~w~圈。")
-            else
-                if current_lap == laps and next_cp_id == race.chp then -- PASSED THE FINISH
-                    PlaySoundFrontend(-1, "Checkpoint_Finish", "DLC_Stunt_Race_Frontend_Sounds", 0)
-                    RemoveBlip(cp_blip_handle)                
-                    break
+    while client_state == ClientStates.ONGOING do
+
+        if IsControlJustPressed(0, 75) then
+            respawnKey_start = GetNetworkTime()
+        end
+        if IsControlJustReleased(0, 75) then
+            respawnKey_start = nil
+        end
+        if respawnKey_start then
+            elapsed = GetNetworkTime() - respawnKey_start
+            DrawRect(0.5, 0.5, elapsed/respawn_hold_time, 0.05, 0, 0, 255, 100)
+            BeginTextCommandWidth("STRING")
+            AddTextComponentSubstringPlayerName("按住 重生")
+            SetTextFont(fontid)
+            SetTextScale(textscale, textscale)
+            local width = EndTextCommandGetWidth(1)
+            local height = GetTextScaleHeight(textscale, fontid)
+            BeginTextCommandDisplayText("STRING")
+            AddTextComponentSubstringPlayerName("按住 重生")
+            SetTextFont(fontid)
+            --SetTextProportional(1)
+            SetTextScale(textscale, textscale)
+            SetTextColour(255, 255, 255, 255)
+            EndTextCommandDisplayText(0.5 - (width/2.0), 0.5 - (height/2.0))
+            if elapsed >= respawn_hold_time then
+                local p, h
+                if next_cp_id == 1 then -- still have to pass first CP
+                    p = race.grid
+                    h = race.head
                 else
-                    PlaySoundFrontend(-1, "Checkpoint", "DLC_Stunt_Race_Frontend_Sounds", 0)
-                    ShowNotification("第~b~" .. next_cp_id .. "~w~检查点。")
-                    next_cp_id = next_cp_id + 1
+                    p = race.chl[next_cp_id-1]
+                    h = race.chh[next_cp_id-1]
+                end
+                SetEntityCoords(race_vehicle, p.x, p.y, p.z, 1, 0, 0, 1)
+                SetEntityHeading(race_vehicle, h, 1, 0, 0, 1)
+                SetVehicleFixed(race_vehicle)
+                SetVehicleDeformationFixed(race_vehicle)
+                SetVehicleDirtLevel(race_vehicle, 0)
+                SetVehicleEngineHealth(race_vehicle, 1000.0)
+                SetVehiclePetrolTankHealth(race_vehicle, 1000.0)
+                SetVehicleUndriveable(race_vehicle, false)
+                SetVehicleEngineCanDegrade(race_vehicle, false)
+                SetVehicleEngineOn(race_vehicle, true)
+                SetPedIntoVehicle(GetPlayerPed(-1), race_vehicle, -1)
+                SetGameplayCamRelativeHeading(0.0)
+                SetVehicleForwardSpeed(race_vehicle, 15.0)
+                if IsThisModelAHeli(GetEntityModel(race_vehicle)) then -- if helicopter race, set blades to full speed etc
+                    SetHeliBladesFullSpeed(race_vehicle)
+                end
+                StartScreenEffect("SwitchShortNeutralIn", 0, 0);
+                PlaySoundFrontend(-1, "Hit", "RESPAWN_ONLINE_SOUNDSET", 1);
+                respawnKey_start = nil
+            end
+        end-- END RESPAWNING KEY
+        
+        if IsPlayerWithinCPTrigger(race.chl[next_cp_id]) then
+            --TriggerServerEvent("racing:passedCP", next_cp_id)
+            FadeoutAndDeleteCheckpoint(cp_handle)
+            -- if next_cp_id < race.chp*laps then
+                -- next_cp_id-race.chp = 1
+            -- end
+            if current_lap < laps then -- 2 < 2  16 finished a lap 圈数问题
+                if next_cp_id == race.chp then
+                    local first_cp = race.chl[1]
+                    local next_cp = race.chl[2]
+                    cp_handle = CreateCheckpoint(5, first_cp.x, first_cp.y, first_cp.z+5.0, next_cp.x, next_cp.y, next_cp.z, cp_radius, cp_r, cp_g, cp_b, 180, 0)
+                    SetCheckpointCylinderHeight(cp_handle, cp_height, cp_height, 100.0);
+                    SetCheckpointIconRgba(cp_handle, cpi_r, cpi_g, cpi_b, cpi_a)
+                    
+                    PlaySoundFrontend(-1, "Checkpoint_Lap", "DLC_Stunt_Race_Frontend_Sounds", 1)
+                    
                     RemoveBlip(cp_blip_handle)
                     cp_blip_handle = next_cp_blip_handle
                     SetBlipScale(cp_blip_handle, 1.0)
+                    
+                    next_cp_blip_handle = AddBlipForCoord(race.chl[2].x, race.chl[2].y, race.chl[2].z)
+                    SetBlipSprite(next_cp_blip_handle, 1)
+                    SetBlipColour(next_cp_blip_handle, 66)
+                    SetBlipScale(next_cp_blip_handle, 0.5)
+                    
+                    current_lap = current_lap + 1
+                    ShowNotification("第~b~" .. current_lap .. "~w~圈。")
+                    next_cp_id = 1
+                else
+                    PlaySoundFrontend(-1, "Checkpoint", "DLC_Stunt_Race_Frontend_Sounds", 0)
+                    next_cp_id = next_cp_id + 1
+                    
+                    RemoveBlip(cp_blip_handle)
+                    cp_blip_handle = next_cp_blip_handle
+                    SetBlipScale(cp_blip_handle, 1.0)
+                    
+                    local previous_cp = race.chl[next_cp_id]
+                    local next_cp = race.chl[next_cp_id+1]
+                    if next_cp_id == race.chp then
+                        next_cp = race.chl[1]
+                    end
+                    local chtype = 5
+                    local z_offset = 5.0
+                    local radius = cp_radius
+                    if race.rndchk and race.rndchk[next_cp_id] then
+                        chtype = 10
+                        z_offset = 10.0
+                        radius = 20.0
+                    elseif race.cpbs1 and (race.cpbs1[next_cp_id] > 1) then
+                        chtype = 10
+                        z_offset = 10.0
+                        radius = 20.0
+                    end
+                    chtype = chtype + GetNumberOfArrowsToDraw(next_cp_id)
+                    cp_handle = CreateCheckpoint(chtype, previous_cp.x, previous_cp.y, previous_cp.z + z_offset, next_cp.x, next_cp.y, next_cp.z, radius, cp_r, cp_g, cp_b, 180, 0)
+                    SetCheckpointCylinderHeight(cp_handle, cp_height, cp_height, 100.0);
+                    SetCheckpointIconRgba(cp_handle, cpi_r, cpi_g, cpi_b, cpi_a)
+                    
+                    if next_cp_id == race.chp then
+                        local next_cp = race.chl[1]
+                        next_cp_blip_handle = AddBlipForCoord(next_cp.x, next_cp.y, next_cp.z)
+                    else
+                        next_cp_blip_handle = AddBlipForCoord(race.chl[next_cp_id+1].x, race.chl[next_cp_id+1].y, race.chl[next_cp_id+1].z)
+                    end
+                    SetBlipSprite(next_cp_blip_handle, 1)
+                    SetBlipColour(next_cp_blip_handle, 66)
+                    SetBlipScale(next_cp_blip_handle, 0.5)
+                end
+            else
+                if next_cp_id == race.chp then -- PASSED THE FINISH                    
+                    PlaySoundFrontend(-1, "Checkpoint_Finish", "DLC_Stunt_Race_Frontend_Sounds", 0)
+                    RemoveBlip(cp_blip_handle)
+                    gameHost = true
+                    break
+                else
+                    PlaySoundFrontend(-1, "Checkpoint", "DLC_Stunt_Race_Frontend_Sounds", 0)
+                    next_cp_id = next_cp_id + 1
+                    
+                    RemoveBlip(cp_blip_handle)
+                    cp_blip_handle = next_cp_blip_handle
+                    SetBlipScale(cp_blip_handle, 1.0)
+                    
                     if next_cp_id == race.chp then -- creating the finish marker
                         local cp = race.chl[next_cp_id]
                         cp_handle = CreateCheckpoint(4, cp.x, cp.y, cp.z, cp.x, cp.y, cp.z, cp_radius, cp_r, cp_g, cp_b, 180, 0)
@@ -597,75 +728,78 @@ Citizen.CreateThread(function()
                         cp_handle = CreateCheckpoint(chtype, previous_cp.x, previous_cp.y, previous_cp.z + z_offset, next_cp.x, next_cp.y, next_cp.z, radius, cp_r, cp_g, cp_b, 180, 0)
                         SetCheckpointCylinderHeight(cp_handle, cp_height, cp_height, 100.0);
                         SetCheckpointIconRgba(cp_handle, cpi_r, cpi_g, cpi_b, cpi_a)
-                        
-                        if current_lap == laps and next_cp_id+1 == race.chp  then -- creating the finish blip
+                        if next_cp_id+1 == race.chp  then -- creating the finish blip
                             next_cp_blip_handle = AddBlipForCoord(race.chl[next_cp_id+1].x, race.chl[next_cp_id+1].y, race.chl[next_cp_id+1].z)
                             SetBlipSprite(next_cp_blip_handle, 38)
                         else
                             next_cp_blip_handle = AddBlipForCoord(race.chl[next_cp_id+1].x, race.chl[next_cp_id+1].y, race.chl[next_cp_id+1].z)
                             SetBlipSprite(next_cp_blip_handle, 1)
-                            SetBlipColour(next_cp_blip_handle, 66)		
-                            SetBlipScale(next_cp_blip_handle, 0.5)							
+                            SetBlipColour(next_cp_blip_handle, 66)
+                            SetBlipScale(next_cp_blip_handle, 0.5)
                         end
                     end
                 end
             end
-		end
-		-- if got_boost and IsControlJustPressed(0, 51) then
-			-- DoBoost()
-		-- elseif got_rockets and IsControlJustPressed(0, 51) then
-			-- DoRockets()
-		-- end
-		Citizen.Wait(0)--删了会死循环 卡死游戏...
-	end
+        end
+        -- if got_boost and IsControlJustPressed(0, 51) then
+            -- DoBoost()
+        -- elseif got_rockets and IsControlJustPressed(0, 51) then
+            -- DoRockets()
+        -- end
+        Citizen.Wait(0)--删了会死循环 卡死游戏...
+    end
 end)
 end
 
 function IsPlayerWithinCPTrigger(cp)
-	local pos = GetEntityCoords(GetPlayerPed(-1))
-	local cp_center = vector3(cp.x, cp.y, cp.z)
-	local trigger_radius = cp_radius + 2.0
-	if race.rndchk and race.rndchk[next_cp_id] then
-		cp_center = cp_center + vector3(0.0,0.0,10.0)
-		trigger_radius = 20.0
-	elseif race.cpbs1 and (race.cpbs1[next_cp_id] > 1) then
+    local pos = GetEntityCoords(GetPlayerPed(-1))
+    local cp_center = vector3(cp.x, cp.y, cp.z)
+    local trigger_radius = cp_radius + 2.0
+    if race.rndchk and race.rndchk[next_cp_id] then
         cp_center = cp_center + vector3(0.0,0.0,10.0)
-		trigger_radius = 20.0
+        trigger_radius = 20.0
+    elseif race.cpbs1 and (race.cpbs1[next_cp_id] > 1) then
+        cp_center = cp_center + vector3(0.0,0.0,10.0)
+        trigger_radius = 20.0
     end
-	local distanceToCheckpoint = Vdist(pos.x, pos.y, pos.z, cp_center.x, cp_center.y, cp_center.z)
-	return (distanceToCheckpoint < trigger_radius)
+    local distanceToCheckpoint = Vdist(pos.x, pos.y, pos.z, cp_center.x, cp_center.y, cp_center.z)
+    return (distanceToCheckpoint < trigger_radius)
 end
 
 function GetNumberOfArrowsToDraw(cp)
-	thisCP = vector2(race.chl[cp].x, race.chl[cp].y)
-	previousCP = vector2(race.chl[cp-1].x, race.chl[cp-1].y)
-	nextCP = vector2(race.chl[cp+1].x, race.chl[cp+1].y)
-	prevToNow = thisCP - previousCP
-	nowToNext = nextCP - thisCP
-	angle = GetAngleBetween_2dVectors(prevToNow.x, prevToNow.y, nowToNext.x, nowToNext.y)
-	angle = Absf(angle)
-	if angle < 80.0 then
-		return 0
-	elseif angle < 140.0 then
-		return 1
-	elseif angle < 180.0 then
-		return 2
-	else
-		return 0
-	end
+    thisCP = vector2(race.chl[cp].x, race.chl[cp].y)
+    previousCP = vector2(race.chl[cp-1].x, race.chl[cp-1].y)
+    if cp == race.chp then
+        nextCP = vector2(race.chl[1].x, race.chl[1].y)
+    else
+        nextCP = vector2(race.chl[cp+1].x, race.chl[cp+1].y)
+    end
+    prevToNow = thisCP - previousCP
+    nowToNext = nextCP - thisCP
+    angle = GetAngleBetween_2dVectors(prevToNow.x, prevToNow.y, nowToNext.x, nowToNext.y)
+    angle = Absf(angle)
+    if angle < 80.0 then
+        return 0
+    elseif angle < 140.0 then
+        return 1
+    elseif angle < 180.0 then
+        return 2
+    else
+        return 0
+    end
 end
 
 function FadeoutAndDeleteCheckpoint(cp)
 Citizen.CreateThread(function()
-	SetCheckpointRgba(cp, 255, 255, 255, 0)
-	local fadeout_duration = 500
-	local start_fadeout = GetNetworkTime()
-	while GetNetworkTime() - start_fadeout < 500 do
-		local alpha = Round(((500 - (GetNetworkTime() - start_fadeout))/500)*255)
-		SetCheckpointIconRgba(cp, 255, 255, 255, alpha)
-		Citizen.Wait(0)
-	end
-	DeleteCheckpoint(cp)
+    SetCheckpointRgba(cp, 255, 255, 255, 0)
+    local fadeout_duration = 500
+    local start_fadeout = GetNetworkTime()
+    while GetNetworkTime() - start_fadeout < 500 do
+        local alpha = Round(((500 - (GetNetworkTime() - start_fadeout))/500)*255)
+        SetCheckpointIconRgba(cp, 255, 255, 255, alpha)
+        Citizen.Wait(0)
+    end
+    DeleteCheckpoint(cp)
 end)
 end
 
