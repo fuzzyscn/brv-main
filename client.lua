@@ -153,17 +153,67 @@ function ShowPiFuMenu(menu)
     end
 end
 
---[[function ShowAllPlayer(menu)
-    local submenu = _menuPool:AddSubMenu(menu, "玩家列表", "显示所有在线玩家。", 1300, 80)
-    for i = 0, 31 do
-        if NetworkIsPlayerActive(i) then
-            submenu:AddItem(NativeUI.CreateItem(GetPlayerName(i), "玩家ID:" .. GetPlayerServerId(i)))
-            TriggerServerEvent('fuzzys:getplayerid', i)
+function ShowAllRace(menu)
+    local submenu = _menuPool:AddSubMenu(menu, "本地比赛列表", "显示所有本地比赛，加载比赛地图和检查点。", 1300, 80)
+    
+    local Race1 = NativeUI.CreateItem("山顶特技比赛", "1")
+    local Race2 = NativeUI.CreateItem("简单绕圈比赛", "2")
+    local Race3 = NativeUI.CreateItem("机场绕圈比赛", "3")
+    local Race4 = NativeUI.CreateItem("沙漠金字塔", "4")
+    local Race5 = NativeUI.CreateItem("彩虹特技赛道", "5")
+    local Race6 = NativeUI.CreateItem("越野拉力赛", "6")
+    local Race7 = NativeUI.CreateItem("高速公路赛", "7")
+    local Race8 = NativeUI.CreateItem("大发射", "8")
+    local Race9 = NativeUI.CreateItem("高空特技比赛", "9")
+    local Race10 = NativeUI.CreateItem("网页暂存比赛地图", "10")
+    
+    submenu:AddItem(Race1)
+    submenu:AddItem(Race2)
+    submenu:AddItem(Race3)
+    submenu:AddItem(Race4)
+    submenu:AddItem(Race5)
+    submenu:AddItem(Race6)
+    submenu:AddItem(Race7)
+    submenu:AddItem(Race8)
+    submenu:AddItem(Race9)
+    submenu:AddItem(Race10)
+    
+    submenu.OnItemSelect = function(sender, item, index)
+        if item == Race1 then
+            TriggerServerEvent('fuzzys:loadmap', 'stunt-chiliad')
+            ShowNotification("加载比赛 ~b~山顶特技比赛~w~。")
+        elseif item == Race2 then
+            TriggerServerEvent('fuzzys:loadmap', '简单绕圈比赛')
+            ShowNotification("加载比赛 ~b~简单绕圈比赛~w~。")
+        elseif item == Race3 then
+            TriggerServerEvent('fuzzys:loadmap', 'jichang')
+            ShowNotification("加载比赛 ~b~机场绕圈比赛~w~。")
+        elseif item == Race4 then
+            TriggerServerEvent('fuzzys:loadmap', 'race')
+            ShowNotification("加载比赛 ~b~沙漠金字塔卡丁车比赛图~w~。")
+        elseif item == Race5 then
+            TriggerServerEvent('fuzzys:loadmap', 'rainbowland')
+            ShowNotification("加载比赛 ~b~彩虹特技赛道~w~。")
+        elseif item == Race6 then
+            TriggerServerEvent('fuzzys:loadmap', 'stunt-rally')
+            ShowNotification("加载比赛 ~b~越野拉力赛~w~。")
+        elseif item == Race7 then
+            TriggerServerEvent('fuzzys:loadmap', 'senora-freeway')
+            ShowNotification("加载比赛 ~b~高速公路赛~w~。")
+        elseif item == Race8 then
+            TriggerServerEvent('fuzzys:loadmap', 'biggest-cumshot-')
+            ShowNotification("加载比赛 ~b~大发射~w~。")        
+        elseif item == Race9 then
+            TriggerServerEvent('fuzzys:loadmap', 'stunt-high-on-air')
+            ShowNotification("加载比赛 ~b~高空特技比赛~w~。")
+        elseif item == Race10 then
+            TriggerServerEvent('fuzzys:loadmap', 'web')
+            ShowNotification("加载比赛 ~b~网页暂存比赛地图~w~。")
         end
     end
 end
 
-function MapEditor(menu)
+--[[function MapEditor(menu)
     local propHash = {-1088903588,3287988974,3906373800,4228722453,3124504613,993442923,4067691788,1431235846,1832852758,346059280,620582592,85342060,483832101,930976262,1677872320,708828172,950795200,3034310442,2419563138,3430162838,2992496910,1518201148,117169896,2815009181}
     local propList = NativeUI.CreateListItem("选择生成模型", propHash, 1)
     menu:AddItem(propList)
@@ -212,16 +262,13 @@ function MapEditor(menu)
         "sm_prop_smug_cont_01a",
     }
     local propColor = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}
-    local name = {"stunt-chiliad","简单绕圈比赛","jichang","race","hahaha","stunt-rally","senora-freeway"}
     local propList = NativeUI.CreateListItem("选择道具", propTb, 1)
     local colorList = NativeUI.CreateListItem("选择道具颜色", propColor, 1)
-    local loadRaceMap = NativeUI.CreateListItem("加载比赛", name, 1, "加载比赛地图和检查点")
     local loadProp = NativeUI.CreateItem("加载道具", "加载玩家放置的道具")
-    local startRace = NativeUI.CreateItem("开始比赛", "测试中...")
+    local startRace = NativeUI.CreateItem("开始并加入比赛", "测试中...")
     local unloadMap = NativeUI.CreateItem("卸载地图和比赛", "删除游戏中所有道具的模型和比赛地图检查点")
     submenu:AddItem(propList)
     submenu:AddItem(colorList)
-    submenu:AddItem(loadRaceMap)
     submenu:AddItem(loadProp)
     submenu:AddItem(startRace)
     submenu:AddItem(unloadMap)
@@ -233,18 +280,16 @@ function MapEditor(menu)
         elseif item == colorList then
             selectColorId = item:IndexToItem(index)
             ShowNotification("切换颜色 ~b~" .. selectColorId .. "~w~。")
-        elseif item == loadRaceMap then
-            racename = item:IndexToItem(index)
-            TriggerServerEvent('fuzzys:loadmap', racename)
-            ShowNotification("加载比赛 ~b~" .. racename .. "~w~。")
         end
     end
     submenu.OnItemSelect = function(sender, item, index)
         if item == loadProp then
             TriggerServerEvent('fuzzys:loadmodel', npcPlayer)
         elseif item == startRace then
+            TriggerServerEvent('fuzzys:JoinRace')
+            Wait(1000)
             startFivemRace()
-            TriggerServerEvent('fuzzys:startRace')
+            TriggerServerEvent('fuzzys:startCount')
             gameHost = false
         elseif item == unloadMap then
             unloadJsonMap()
@@ -255,7 +300,7 @@ end
 
 ShowPiFuMenu(mainMenu)
 MapEditor(mainMenu)
---ShowAllPlayer(mainMenu)
+ShowAllRace(mainMenu)
 
 _menuPool:RefreshIndex()
 _menuPool:MouseControlsEnabled(false)
@@ -263,7 +308,7 @@ _menuPool:ControlDisablingEnabled(false)
 
 Citizen.CreateThread(function()
     while true do
-    Citizen.Wait(5)
+    Citizen.Wait(1)
         _menuPool:ProcessMenus()
         if IsControlJustPressed(0, 244) then
             mainMenu:Visible(not mainMenu:Visible())
@@ -406,21 +451,15 @@ function loadJsonMap(jsonTable)
         if jsonTable.mission.race then
             race = jsonTable.mission.race
             jsonVehicle = jsonTable.mission.veh
-            local gen = jsonTable.mission.gen            
-            local ped = GetPlayerPed(-1)            
-            SetEntityCoords(ped, gen.start.x, gen.start.y, gen.start.z, 1, 0, 0, 1)
-            SetEntityHeading(ped, race.head, 1, 0, 0, 1)
-            TriggerServerEvent('fuzzys:getplayerid', "比赛名字：^6" .. gen.nm .. " ^7描述：" .. gen.dec[1])
+            local gen = jsonTable.mission.gen
+            --SetEntityCoords(ped, gen.start.x, gen.start.y, gen.start.z, 1, 0, 0, 1)
+            --SetEntityHeading(ped, race.head, 1, 0, 0, 1)
+            TriggerServerEvent('fuzzys:getplayerid', "名字：^6" .. gen.nm .. " ^7描述：" .. gen.dec[1])
             
             -- local vname = tonumber(gen.ivm)
             -- if vname == 0 then
                 -- vname = joaat("xa21")
             -- end
-            local vehicle = CreateVehicle("xa21", race.grid.x, race.grid.y, race.grid.z, race.head, true, false)
-            SetVehRadioStation(vehicle, "OFF")
-            SetVehicleOnGroundProperly(vehicle)
-            Wait(2000)
-            SetPedIntoVehicle(ped, vehicle, -1)
         end
     end)
 end
@@ -506,26 +545,30 @@ function Initialize(scaleform)
     return scaleform
 end
 
+local position = 0 --起始顺序位置
+RegisterNetEvent('fuzzys:givePosition')
+AddEventHandler('fuzzys:givePosition', function(pos)
+	position = pos
+    print(position)
+end)
+
 function startFivemRace()
-    if race then        
-        local position = 8 --起始顺序位置
+    if race then
         local ped = GetPlayerPed(-1)
-        local vehicle = GetVehiclePedIsIn(ped)
-        --local vehpos = GetOffsetFromEntityInWorldCoords(PlayerPedId(), (-1*(-1)^position)*3.0, -4.2 - position*6.0, 0.0)
-        
         ClearAreaOfVehicles(race.grid.x, race.grid.y, race.grid.z, 3000.0, 0, 0, 0, 0, false)
         ClearAreaOfVehicles(race.grid.x, race.grid.y, race.grid.z, 3000.0, 0, 0, 1, 0, false)
         ClearAreaOfVehicles(race.grid.x, race.grid.y, race.grid.z, 3000.0, 0, 0, 0, 1, false)
-        
-        SetEntityCoords(vehicle, jsonVehicle.loc[position].x, jsonVehicle.loc[position].y, jsonVehicle.loc[position].z, 1, 0, 0, 1)
-        SetEntityHeading(vehicle, jsonVehicle.head[position], 1, 0, 0, 1)
         -- while not HasCollisionLoadedAroundEntity(vehicle) do
             -- Wait(0)
         -- end
+        --local vehpos = GetOffsetFromEntityInWorldCoords(PlayerPedId(), (-1*(-1)^position)*3.0, -4.2 - position*6.0, 0.0)
+        local vehicle = CreateVehicle("xa21", jsonVehicle.loc[position].x, jsonVehicle.loc[position].y, jsonVehicle.loc[position].z, jsonVehicle.head[position], true, false)
+        SetVehicleOnGroundProperly(vehicle)
+        
+        SetPedIntoVehicle(ped, vehicle, -1)
         
         SetVehicleNumberPlateText(vehicle, "racemode")
-        --SetPedIntoVehicle(PlayerPedId(), vehicle, -1)
-        --SetVehRadioStation(vehicle, "OFF")
+        SetVehRadioStation(vehicle, "OFF")
         SetPedCanBeKnockedOffVehicle(ped, true)
         SetVehicleDoorsLockedForAllPlayers(vehicle, true)
         SetVehicleDoorsLocked(vehicle, 4)
@@ -624,7 +667,7 @@ Citizen.CreateThread(function()
         end-- END RESPAWNING KEY
         
         if IsPlayerWithinCPTrigger(race.chl[next_cp_id]) then
-            --TriggerServerEvent("racing:passedCP", next_cp_id)
+            TriggerServerEvent("racing:passedCP", next_cp_id)
             FadeoutAndDeleteCheckpoint(cp_handle)
             -- if next_cp_id < race.chp*laps then
                 -- next_cp_id-race.chp = 1
@@ -695,6 +738,13 @@ Citizen.CreateThread(function()
                 if next_cp_id == race.chp then -- PASSED THE FINISH                    
                     PlaySoundFrontend(-1, "Checkpoint_Finish", "DLC_Stunt_Race_Frontend_Sounds", 0)
                     RemoveBlip(cp_blip_handle)
+                    
+                    SetVehicleNumberPlateText(race_vehicle, "freemode")
+                    SetPedCanBeKnockedOffVehicle(GetPlayerPed(-1), false)
+                    SetVehicleDoorsLockedForAllPlayers(race_vehicle, false)
+                    --SetVehicleDoorsLocked(race_vehicle, 4)
+                    SetEntityInvincible(race_vehicle, false)
+                    
                     gameHost = true
                     break
                 else

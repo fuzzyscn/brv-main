@@ -14,8 +14,8 @@ AddEventHandler('fuzzys:playerSpawned', function()
     --TriggerClientEvent('map:loadmap', source, props)
 end)
   
-RegisterServerEvent('fuzzys:startRace')
-AddEventHandler('fuzzys:startRace', function()
+RegisterServerEvent('fuzzys:startCount')
+AddEventHandler('fuzzys:startCount', function()
     gameHost = true
     Citizen.CreateThread(function()
         for i = 3, -1, -1 do
@@ -23,6 +23,14 @@ AddEventHandler('fuzzys:startRace', function()
             Citizen.Wait(1000)
         end
     end)
+end)
+
+local pos = 0
+RegisterServerEvent('fuzzys:JoinRace')
+AddEventHandler('fuzzys:JoinRace', function()
+    pos = pos + 1
+    print(pos)
+    TriggerClientEvent('fuzzys:givePosition', source, pos)
 end)
 
 RegisterNetEvent('fuzzys:loadmodel')
@@ -35,6 +43,12 @@ RegisterNetEvent('fuzzys:getplayerid')
 AddEventHandler('fuzzys:getplayerid', function(msg)
     TriggerClientEvent('chatMessage', -1, '^1比赛提示', {255,255,255}, "^2" .. msg)
     print("比赛地图: " .. props.mission.gen.nm)
+end)
+
+RegisterNetEvent('racing:passedCP')
+AddEventHandler('racing:passedCP', function(pos)
+    print(GetPlayerName(source) .. "通过了: " .. pos)
+    TriggerClientEvent('chatMessage', -1, '^1比赛提示', {255,255,255}, GetPlayerName(source) .. "^7通过了: " .. pos)
 end)
 
 RegisterServerEvent('map:sync')
