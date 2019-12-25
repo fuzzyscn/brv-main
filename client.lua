@@ -6,7 +6,7 @@ local selectColorId = 3
 local racename = "race"
 -- CONFIGURATION
 local cp_radius = 10.0
-local cp_height = 9.5
+local cp_height = 7.5
 local cp_colour = 13 -- Checkpoint colour https://pastebin.com/d9aHPbXN
 local cp_icon_colour = 134 -- Checkpoint icon colour
 local cp_r, cp_g, cp_b, cp_a = GetHudColour(cp_colour)
@@ -265,7 +265,7 @@ function MapEditor(menu)
     local propList = NativeUI.CreateListItem("选择道具", propTb, 1)
     local colorList = NativeUI.CreateListItem("选择道具颜色", propColor, 1)
     local loadProp = NativeUI.CreateItem("加载道具", "加载玩家放置的道具")
-    local startRace = NativeUI.CreateItem("开始并加入比赛", "测试中...")
+    local startRace = NativeUI.CreateItem("开始比赛", "NPC测试中...")
     local unloadMap = NativeUI.CreateItem("卸载地图和比赛", "删除游戏中所有道具的模型和比赛地图检查点")
     submenu:AddItem(propList)
     submenu:AddItem(colorList)
@@ -451,7 +451,7 @@ function loadJsonMap(jsonTable)
         if jsonTable.mission.race then
             race = jsonTable.mission.race
             jsonVehicle = jsonTable.mission.veh
-            local gen = jsonTable.mission.gen
+            gen = jsonTable.mission.gen
             --SetEntityCoords(ped, gen.start.x, gen.start.y, gen.start.z, 1, 0, 0, 1)
             --SetEntityHeading(ped, race.head, 1, 0, 0, 1)
             TriggerServerEvent('fuzzys:getplayerid', "名字：^6" .. gen.nm .. " ^7描述：" .. gen.dec[1])
@@ -507,30 +507,30 @@ Citizen.CreateThread(function()
 		end
     end
 end)
-Citizen.CreateThread(function()
-	while true do
-    Citizen.Wait(0)
-        if gameHost then
-            scaleform = InitializeRaceScaleform("mp_big_message_freemode")
-            DrawScaleformMovieFullscreen(scaleform, 255, 255, 255, 255, 0)
-            --TogglePvP(false)
-            local JoinedPlayers = GetPlayers()
-            RenderPlayerList(JoinedPlayers)            
-        end
-	end
-end)
-function InitializeRaceScaleform(scaleform)
-    local scaleform = RequestScaleformMovie(scaleform)
-    while not HasScaleformMovieLoaded(scaleform) do
-        Citizen.Wait(0)
-    end
-    PushScaleformMovieFunction(scaleform, "SHOW_SHARD_WASTED_MP_MESSAGE")
+-- Citizen.CreateThread(function()
+	-- while true do
+    -- Citizen.Wait(0)
+        -- if gameHost then
+            -- scaleform = InitializeRaceScaleform("mp_big_message_freemode")
+            -- DrawScaleformMovieFullscreen(scaleform, 255, 255, 255, 255, 0)
+            -- TogglePvP(false)
+            -- local JoinedPlayers = GetPlayers()
+            -- RenderPlayerList(JoinedPlayers)            
+        -- end
+	-- end
+-- end)
+-- function InitializeRaceScaleform(scaleform)
+    -- local scaleform = RequestScaleformMovie(scaleform)
+    -- while not HasScaleformMovieLoaded(scaleform) do
+        -- Citizen.Wait(0)
+    -- end
+    -- PushScaleformMovieFunction(scaleform, "SHOW_SHARD_WASTED_MP_MESSAGE")
 
-	PushScaleformMovieFunctionParameterString("~b~".."比赛结束")
-    PushScaleformMovieFunctionParameterString("")
-    PopScaleformMovieFunctionVoid()
-    return scaleform
-end
+	-- PushScaleformMovieFunctionParameterString("~b~".."比赛结束")
+    -- PushScaleformMovieFunctionParameterString("")
+    -- PopScaleformMovieFunctionVoid()
+    -- return scaleform
+-- end
 function Initialize(scaleform)
     local scaleform = RequestScaleformMovie(scaleform)
     while not HasScaleformMovieLoaded(scaleform) do
@@ -562,21 +562,26 @@ function startFivemRace()
             -- Wait(0)
         -- end
         --local vehpos = GetOffsetFromEntityInWorldCoords(PlayerPedId(), (-1*(-1)^position)*3.0, -4.2 - position*6.0, 0.0)
-        local vehicle = CreateVehicle("xa21", jsonVehicle.loc[position].x, jsonVehicle.loc[position].y, jsonVehicle.loc[position].z, jsonVehicle.head[position], true, false)
-        SetVehicleOnGroundProperly(vehicle)
-        
-        SetPedIntoVehicle(ped, vehicle, -1)
-        
-        SetVehicleNumberPlateText(vehicle, "racemode")
-        SetVehRadioStation(vehicle, "OFF")
-        SetPedCanBeKnockedOffVehicle(ped, true)
-        SetVehicleDoorsLockedForAllPlayers(vehicle, true)
-        SetVehicleDoorsLocked(vehicle, 4)
-        SetEntityInvincible(vehicle, true)
+        local carmodel = "xa21"
+        loadmodel(carmodel)
+        --local vehicle = CreateVehicle(carmodel, jsonVehicle.loc[gen.num].x, jsonVehicle.loc[gen.num].y, jsonVehicle.loc[gen.num].z, jsonVehicle.head[gen.num], true, false)
         --SetVehicleOnGroundProperly(vehicle)
+        
+        --SetPedIntoVehicle(ped, vehicle, -1)
+        
+        --SetVehicleNumberPlateText(vehicle, "racemode")
+        --SetVehRadioStation(vehicle, "OFF")
+        --SetPedCanBeKnockedOffVehicle(ped, true)
+        --SetVehicleDoorsLockedForAllPlayers(vehicle, true)
+        --SetVehicleDoorsLocked(vehicle, 4)
+        --SetEntityInvincible(vehicle, true)
         --FreezeEntityPosition(vehicle, true)
         
+        npcRaceToNext()
+        
+        --Citizen.Wait(50)
         client_state = ClientStates.ONGOING
+        --SetRadarBigmapEnabled(true, false)
         
         local first_cp = race.chl[1]
         local next_cp = race.chl[2]
@@ -596,6 +601,86 @@ function startFivemRace()
         StartRaceOnTick()
     end
 end
+
+function npcRaceToNext()
+    local npcNum = gen.num-- - 1
+    for i = 1, npcNum do
+        Citizen.CreateThread(function()
+            local npcmodel = "player_zero"
+            local npccar = "t20"
+            loadmodel(npcmodel)
+            loadmodel(npccar)
+
+            local vehicle = CreateVehicle(npccar, jsonVehicle.loc[i].x, jsonVehicle.loc[i].y, jsonVehicle.loc[i].z, jsonVehicle.head[i], true, true)
+            SetVehicleOnGroundProperly(vehicle)
+            SetEntityInvincible(vehicle, true)
+            local ped = CreatePed(4, npcmodel, jsonVehicle.loc[i].x, jsonVehicle.loc[i].y, jsonVehicle.loc[i].z, jsonVehicle.head[i], true, true)
+            SetEntityAsMissionEntity(ped)
+            SetEntityAsMissionEntity(vehicle)
+            SetPedIntoVehicle(ped, vehicle, -1)
+            if i == npcNum then
+                SetPedIntoVehicle(GetPlayerPed(-1), vehicle, 0)
+            end
+            SetDriverAbility(ped, 1.0)        -- values between 0.0 and 1.0 are allowed.
+            SetDriverAggressiveness(ped, 0.0)            
+            SetPedKeepTask(ped, true)
+            local color = math.random(1, 84)
+            local blip = AddBlipForEntity(ped)
+			SetBlipSprite(blip, 1)
+			ShowHeadingIndicatorOnBlip(blip, true) -- Player Blip indicator
+            SetBlipColour(blip, color)
+			SetBlipScale(blip,  0.6)
+            BeginTextCommandSetBlipName("string")
+            AddTextComponentString("迈克"..i.."号")
+            EndTextCommandSetBlipName(blip)
+            
+            local chp = race.chp
+            local k = 1
+            while true do
+                --SetBlockingOfNonTemporaryEvents(ped, true)
+                --TaskEnterVehicle(ped, vehicle, -1, 0, 1.0, 1, 0)
+                local pos = GetEntityCoords(ped)
+                local distance = Vdist(pos.x, pos.y, pos.z, race.chl[k].x, race.chl[k].y, race.chl[k].z)
+                
+                local carPitch = GetEntityPitch(vehicle)
+                local speed = GetEntitySpeed(vehicle)
+                if carPitch >= 85.0 or carPitch <= -85.0 then
+                    --Citizen.InvokeNative(0x0AA27680A0BD43FA)
+                    SetEntityRotation(vehicle, 0, 0, 0, 2, true)
+                end
+                if speed <= 5.0 and k > 1 then
+                    SetEntityCoords(vehicle, race.chl[k-1].x, race.chl[k-1].y, race.chl[k-1].z, 1, 0, 0, 1)
+                    SetEntityHeading(vehicle, race.chh[k-1], 1, 0, 0, 1)
+                    SetVehicleForwardSpeed(vehicle, 10.0)
+                    SetDriveTaskDrivingStyle(ped, 262144)
+                    TaskVehicleDriveToCoordLongrange(ped, vehicle, race.chl[k].x, race.chl[k].y, race.chl[k].z, 20.0, 262144, 10.0)
+                else
+                    SetDriveTaskDrivingStyle(ped, 1090781748)
+                    TaskVehicleDriveToCoordLongrange(ped, vehicle, race.chl[k].x, race.chl[k].y, race.chl[k].z, GetVehicleMaxSpeed(vehicle), 1090781748, 10.0)
+                end
+                
+                if k < chp then
+                    if distance < 20 then
+                        TriggerServerEvent("racing:NPCpassedCP", i, k)
+                        k = k + 1
+                    end
+                else
+                    TriggerServerEvent("racing:NPCpassedFP", i)
+                    --RemoveMpGamerTag(npcTag)
+                    break
+                end
+                
+                local npcTag = CreateMpGamerTag(ped, "迈克"..i.."号", false, false, '', 0)
+                SetMpGamerTagVisibility(npcTag, 0, true)
+                SetMpGamerTagColour(npcTag, 0, color)
+                
+                Citizen.Wait(50)
+            end
+            --TaskVehicleDriveToCoord(ped, vehicle, race.chl[k].x, race.chl[k].y, race.chl[k].z, GetVehicleMaxSpeed(vehicle), 0, -1848994066, 262144, 10.0)
+        end)
+    end
+end
+
 
 function StartRaceOnTick()
 Citizen.CreateThread(function()
@@ -744,7 +829,7 @@ Citizen.CreateThread(function()
                     SetVehicleDoorsLockedForAllPlayers(race_vehicle, false)
                     --SetVehicleDoorsLocked(race_vehicle, 4)
                     SetEntityInvincible(race_vehicle, false)
-                    
+                    --SetRadarBigmapEnabled(false, false)
                     gameHost = true
                     break
                 else
@@ -862,6 +947,13 @@ function unloadJsonMap()
     Citizen.Trace("Fuzzys: unload ".. num .." props success \n")
     props = {}
     race = {}
+end
+
+function loadmodel(model)
+    while not HasModelLoaded(model) do
+        RequestModel(model)
+        Wait(10)
+    end
 end
 
 --[[Citizen.CreateThread(function()

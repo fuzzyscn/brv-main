@@ -3,7 +3,7 @@ Citizen.CreateThread(function()
 	while true do
 		Citizen.Wait(0)
 		for Player = 0, 31 do
-			if Player ~= PlayerId() then
+			--if Player ~= PlayerId() then
 				local IsConnected = NetworkIsPlayerConnected(Player)
 				local IsTagActive = IsMpGamerTagActive(PlayerTags[Player])
 
@@ -19,8 +19,21 @@ Citizen.CreateThread(function()
 					end
 					PlayerTags[Player] = nil
 				end
-            end
+            --end
 		end
+	end
+end)
+
+-- Thanks to @nobody
+Citizen.CreateThread(function()
+	while true do
+		-- These natives has to be called every frame.
+		SetVehicleDensityMultiplierThisFrame(0.0)
+		SetPedDensityMultiplierThisFrame(0.0)
+		SetRandomVehicleDensityMultiplierThisFrame(0.0)
+		SetParkedVehicleDensityMultiplierThisFrame(0.0)
+		SetScenarioPedDensityMultiplierThisFrame(0.0, 0.0)
+		Citizen.Wait(1)
 	end
 end)
 

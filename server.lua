@@ -4,7 +4,6 @@ local sqlDateFormat = '%Y-%m-%d %H:%M:%S'
 local props = {}
 local prop_list = {}
 local no = 0
---local countrycodes = {"zh-cn", "zh", "en", "de", "pt", "es", "es-mx", "pl", "ru", "it", "fr", "ko", "ja"}
 
 RegisterServerEvent('fuzzys:playerSpawned')
 AddEventHandler('fuzzys:playerSpawned', function()
@@ -48,7 +47,16 @@ end)
 RegisterNetEvent('racing:passedCP')
 AddEventHandler('racing:passedCP', function(pos)
     print(GetPlayerName(source) .. "通过了: " .. pos)
-    TriggerClientEvent('chatMessage', -1, '^1比赛提示', {255,255,255}, GetPlayerName(source) .. "^7通过了: " .. pos)
+end)
+
+RegisterNetEvent('racing:NPCpassedCP')
+AddEventHandler('racing:NPCpassedCP', function(i, k)
+    TriggerClientEvent('chatMessage', -1, '^1提示', {255,255,255}, "迈克"..i.."号通过了 " .. k .. "点。")
+end)
+
+RegisterNetEvent('racing:NPCpassedFP')
+AddEventHandler('racing:NPCpassedFP', function(i)
+    TriggerClientEvent('chatMessage', -1, '^5提示', {0,0,255}, "迈克"..i.."号通过了终点！！！")
 end)
 
 RegisterServerEvent('map:sync')
@@ -125,7 +133,6 @@ AddEventHandler('chatMessage', function(source, name, message)
   if (args[1] == "/json") then
     CancelEvent()
     if (args[2] ~= nil) then
-      --local playerID = tonumber(source)
       local url = tostring(args[2])      
       getJsonFromUrl(url, source)
     end
@@ -133,22 +140,17 @@ AddEventHandler('chatMessage', function(source, name, message)
 end)
 
 function getJsonFromUrl(url, player)
-    --for _, code in ipairs(countrycodes) do
-        --json_url = url.replace("2_0.jpg","0_0_"+code+".json")
-        --json_url = json_url.replace("1_0.jpg","0_0_"+code+".json")
-        PerformHttpRequest(url, function(errorCode, resultData, resultHeaders)
-            if errorCode == 200 then
-                props = json.decode(resultData)
-                TriggerClientEvent('chatMessage', -1, '^1Json系统提示', {0,255,255}, "^4正在加载网络资源：^3地图名字" .. props.mission.gen.nm .. " ^5描述：" .. props.mission.gen.dec[1])
-                TriggerClientEvent('map:loadmap', player, props)
-                SaveResourceFile(GetCurrentResourceName(), "/json/web.json", json.encode(props), -1)
-                print("保存线上地图 ".. props.mission.gen.nm .. " 到web.json。")
-            else
-                print("Url Error!!!" .. errorCode)
-            end
-        end, "GET", "", {['Content-Type'] = 'application/json'})
-    -- end
-    -- return response
+    PerformHttpRequest(url, function(errorCode, resultData, resultHeaders)
+        if errorCode == 200 then
+            props = json.decode(resultData)
+            TriggerClientEvent('chatMessage', -1, '^1Json系统提示', {0,255,255}, "^4正在加载网络资源：^3" .. props.mission.gen.nm)
+            TriggerClientEvent('map:loadmap', player, props)
+            SaveResourceFile(GetCurrentResourceName(), "/json/web.json", json.encode(props), -1)
+            print("保存线上地图 ".. props.mission.gen.nm .. " 到web.json。")
+        else
+            print("Url Error!!!" .. errorCode)
+        end
+    end, "GET", "", {['Content-Type'] = 'application/json'})
 end
 
 function stringsplit(inputstr, sep)
