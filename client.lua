@@ -159,7 +159,7 @@ function ShowAllRace(menu)
     local Race1 = NativeUI.CreateItem("山顶特技比赛", "1")
     local Race2 = NativeUI.CreateItem("简单绕圈比赛", "2")
     local Race3 = NativeUI.CreateItem("机场绕圈比赛", "3")
-    local Race4 = NativeUI.CreateItem("沙漠金字塔", "4")
+    local Race4 = NativeUI.CreateItem("通勤之路", "4")
     local Race5 = NativeUI.CreateItem("彩虹特技赛道", "5")
     local Race6 = NativeUI.CreateItem("越野拉力赛", "6")
     local Race7 = NativeUI.CreateItem("高速公路赛", "7")
@@ -189,8 +189,8 @@ function ShowAllRace(menu)
             TriggerServerEvent('fuzzys:loadmap', 'jichang')
             ShowNotification("加载比赛 ~b~机场绕圈比赛~w~。")
         elseif item == Race4 then
-            TriggerServerEvent('fuzzys:loadmap', 'race')
-            ShowNotification("加载比赛 ~b~沙漠金字塔卡丁车比赛图~w~。")
+            TriggerServerEvent('fuzzys:loadmap', 'tongqin')
+            ShowNotification("加载比赛 ~b~通勤之路NPC比赛图~w~。")
         elseif item == Race5 then
             TriggerServerEvent('fuzzys:loadmap', 'rainbowland')
             ShowNotification("加载比赛 ~b~彩虹特技赛道~w~。")
@@ -602,19 +602,81 @@ function startFivemRace()
     end
 end
 
+local npcCars =
+{
+    't20',
+    'xa21',
+    'dune5',
+    'elegy',
+    'tempesta',
+    'italigtb',
+    'italigtb2',
+    'nero',
+    'nero2',
+    'specter',
+    'specter2',
+    'phantom2',
+    'voltic2',
+    'penetrator',
+    'gp1',
+    'turismo2',
+    'infernus2',
+    'ruston',
+    'vagner',
+    'cheetah2',
+    'torero',
+    'ardent',
+    'visione',
+    'retinue',
+    'cyclone',
+    'rapidgt3',
+    'raiden',
+    'pariah',
+    'sc1',
+    'gt500',
+    'z190',
+    'viseris',
+    'autarch',
+    'comet5',
+    'neon',
+    'revolter',
+    'sentinel3',
+    'dominator3',
+    'ellie',
+    'entity2',
+    'flashgt',
+    'gb200',
+    'hotring',
+    'issi3',
+    'jester3',
+    'tezeract',
+    'taipan',
+    'tyrant',
+    'swinger',
+    'scramjet',
+    'deveste',
+    'deviant',
+    'italigto',
+    'schlagen',
+    'toros',
+    'zr3803'
+}
+
 function npcRaceToNext()
     local npcNum = gen.num-- - 1
     for i = 1, npcNum do
         Citizen.CreateThread(function()
             local npcmodel = "player_zero"
-            local npccar = "t20"
+            local npccar = npcCars[math.random(1, #npcCars)]
             loadmodel(npcmodel)
             loadmodel(npccar)
 
             local vehicle = CreateVehicle(npccar, jsonVehicle.loc[i].x, jsonVehicle.loc[i].y, jsonVehicle.loc[i].z, jsonVehicle.head[i], true, true)
             SetVehicleOnGroundProperly(vehicle)
-            SetEntityInvincible(vehicle, true)
+            --SetEntityInvincible(vehicle, true)
             local ped = CreatePed(4, npcmodel, jsonVehicle.loc[i].x, jsonVehicle.loc[i].y, jsonVehicle.loc[i].z, jsonVehicle.head[i], true, true)
+            SetPedRandomComponentVariation(ped, false)
+            SetPedRandomProps(ped)
             SetEntityAsMissionEntity(ped)
             SetEntityAsMissionEntity(vehicle)
             SetPedIntoVehicle(ped, vehicle, -1)
@@ -649,24 +711,26 @@ function npcRaceToNext()
                     SetEntityRotation(vehicle, 0, 0, 0, 2, true)
                 end
                 if speed <= 5.0 and k > 1 then
+                    -- SetDriveTaskDrivingStyle(ped, 262144)
+                    -- TaskVehicleDriveToCoordLongrange(ped, vehicle, race.chl[k].x, race.chl[k].y, race.chl[k].z, 20.0, 262144, 10.0)
+                    -- Wait(math.random(5000, 10000))
                     SetEntityCoords(vehicle, race.chl[k-1].x, race.chl[k-1].y, race.chl[k-1].z, 1, 0, 0, 1)
                     SetEntityHeading(vehicle, race.chh[k-1], 1, 0, 0, 1)
                     SetVehicleForwardSpeed(vehicle, 10.0)
-                    SetDriveTaskDrivingStyle(ped, 262144)
-                    TaskVehicleDriveToCoordLongrange(ped, vehicle, race.chl[k].x, race.chl[k].y, race.chl[k].z, 20.0, 262144, 10.0)
                 else
-                    SetDriveTaskDrivingStyle(ped, 1090781748)
-                    TaskVehicleDriveToCoordLongrange(ped, vehicle, race.chl[k].x, race.chl[k].y, race.chl[k].z, GetVehicleMaxSpeed(vehicle), 1090781748, 10.0)
+                    SetDriveTaskDrivingStyle(ped, 262144)
+                    TaskVehicleDriveToCoordLongrange(ped, vehicle, race.chl[k].x, race.chl[k].y, race.chl[k].z, GetVehicleMaxSpeed(vehicle), 262144, 10.0)
                 end
                 
                 if k < chp then
-                    if distance < 20 then
-                        TriggerServerEvent("racing:NPCpassedCP", i, k)
+                    if distance < 12 then
+                        --TriggerServerEvent("racing:NPCpassedCP", i, k)
                         k = k + 1
                     end
                 else
                     TriggerServerEvent("racing:NPCpassedFP", i)
                     --RemoveMpGamerTag(npcTag)
+                    RemoveBlip(blip)
                     break
                 end
                 

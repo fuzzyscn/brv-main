@@ -81,7 +81,7 @@ AddEventHandler('fuzzys:loadmap', function(mapname)
 end)
 
 Citizen.CreateThread(function()
-    local data1 = LoadResourceFile(GetCurrentResourceName(), "/json/race.json") or ""
+    local data1 = LoadResourceFile(GetCurrentResourceName(), "/json/tongqin.json") or ""
     if data1 ~= "" then
         props = json.decode(data1)
     end
@@ -143,7 +143,7 @@ function getJsonFromUrl(url, player)
     PerformHttpRequest(url, function(errorCode, resultData, resultHeaders)
         if errorCode == 200 then
             props = json.decode(resultData)
-            TriggerClientEvent('chatMessage', -1, '^1Json系统提示', {0,255,255}, "^4正在加载网络资源：^3" .. props.mission.gen.nm)
+            TriggerClientEvent('chatMessage', -1, '^1系统提示', {0,255,255}, "^4正在加载网络资源：^3" .. props.mission.gen.nm)
             TriggerClientEvent('map:loadmap', player, props)
             SaveResourceFile(GetCurrentResourceName(), "/json/web.json", json.encode(props), -1)
             print("保存线上地图 ".. props.mission.gen.nm .. " 到web.json。")
@@ -164,6 +164,28 @@ function stringsplit(inputstr, sep)
     end
     return t
 end
+-- 测试面向对象
+Shape = {area = 0}
+
+-- 基础类方法 new
+function Shape:new (o,side)
+  o = o or {}
+  setmetatable(o, self)
+  self.__index = self
+  side = side or 0
+  self.area = side*side;
+  return o
+end
+
+-- 基础类方法 printArea
+function Shape:printArea ()
+  print("Area is", self.area)
+end
+
+-- 创建对象
+myshape = Shape:new(nil,12)
+
+myshape:printArea()
 
 --[[function loadPlayer(source)
   if players[source] == nil then
