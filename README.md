@@ -15,10 +15,8 @@ ensure sessionmanager
 ensure hardcap
 ensure rconlog
 ensure chat
-start main
+ensure main
 
-add_ace group.admin command allow
-add_principal identifier.steam:110000112b83825 group.admin
 ```
 #使用README！
 - 用`main/server/rconlog_server.lua`替换rconlog原文件才能使用机器人
